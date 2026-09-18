@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Лезги Инвестор (BETA)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+        html, body { height: 100%; overflow: hidden; touch-action: manipulation; overscroll-behavior: none; }
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #0a1420;
+            display: flex; justify-content: center; align-items: center;
+            padding: env(safe-area-inset-top, 10px) 10px env(safe-area-inset-bottom, 10px);
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(60, 140, 200, 0.35) 0%, transparent 40%),
+                radial-gradient(ellipse at 80% 20%, rgba(140, 80, 200, 0.3) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(40, 180, 160, 0.25) 0%, transparent 45%),
+                radial-gradient(ellipse at 70% 60%, rgba(200, 100, 180, 0.2) 0%, transparent 40%),
+                linear-gradient(180deg, #0a1420 0%, #0d1a28 50%, #08101a 100%);
+            animation: auroraMove 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes auroraMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(2%, -2%) rotate(1deg); }
+            50% { transform: translate(-2%, 2%) rotate(-1deg); }
+            75% { transform: translate(-1%, -1%) rotate(0.5deg); }
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(2px 2px at 40% 20%, rgba(180,220,255,0.5) 0%, transparent 100%),
+                radial-gradient(1px 1px at 80% 40%, rgba(255,255,255,0.35) 0%, transparent 100%),
+                radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                radial-gradient(2px 2px at 90% 90%, rgba(200,180,255,0.4) 0%, transparent 100%),
+                radial-gradient(1px 1px at 50% 50%, rgba(255,255,255,0.25) 0%, transparent 100%),
+                radial-gradient(1px 1px at 30% 60%, rgba(180,255,220,0.3) 0%, transparent 100%);
+            background-size: 100% 100%;
+            animation: starsTwinkle 8s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes starsTwinkle {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.9; }
+        }
+
+        .game-container {
+            position: relative; z-index: 10; width: 100%; max-width: 620px; max-height: 100dvh;
+            background: rgba(10, 20, 32, 0.82); backdrop-filter: blur(16px);
+            border-radius: 40px 40px 30px 30px; padding: 16px 14px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 1px 4px rgba(100,200,255,0.2);
+            border: 1px solid #4a7a9b; overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .game-container::-webkit-scrollbar { width: 0; display: none; }
+        .game-container { scrollbar-width: none; }
+
+        .live-indicator {
+            display: none; position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #00c853, #00701a); color: white;
+            padding: 6px 16px; border-radius: 30px; font-weight: 900; font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0,200,83,0.6); z-index: 100;
+            animation: livePulse 1s ease-in-out infinite; border: 2px solid #80ffb0;
+        }
+        .live-indicator.show { display: flex; align-items: center; gap: 8px; }
+        @keyframes livePulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } }
+        .live-dot { width: 10px; height: 10px; background: white; border-radius: 50%; animation: liveDotBlink 1s infinite; }
+        @keyframes liveDotBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .top-bar { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; position: relative; }
+        .top-btn {
+            flex: 1 1 auto; min-width: 0; border-radius: 30px; padding: 12px 10px;
+            font-weight: 900; font-size: 0.75rem; cursor: pointer; transition: all 0.15s ease;
+            display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+            border: 2px solid; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-family: inherit;
+            position: relative; overflow: hidden;
+        }
+
+        .side-job-btn {
+            background: linear-gradient(135deg, #000 0%, #1a1a1a 40%, #000 60%, #2a2a2a 100%);
+            background-size: 200% 200%;
+            border: 2px solid #444;
+            color: #fff;
+            box-shadow: 0 5px 0 #000, 0 0 20px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.08);
+            animation: sideJobShine 2.5s linear infinite, sideJobPulse 2s ease-in-out infinite;
+            text-shadow: 0 0 8px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.9);
+            letter-spacing: 1px;
+        }
+        @keyframes sideJobShine { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+        @keyframes sideJobPulse {
+            0%,100% { box-shadow: 0 5px 0 #000, 0 0 15px rgba(255,255,255,0.15), inset 0 0 20px rgba(255,255,255,0.08); }
+            50% { box-shadow: 0 5px 0 #000, 0 0 35px rgba(255,255,255,0.5), inset 0 0 30px rgba(255,255,255,0.15); }
+        }
+        .side-job-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -100%;
+            width: 100%; height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: sideJobSweep 2.5s ease-in-out infinite;
+        }
+        @keyframes sideJobSweep { 0% { left: -100%; } 50%, 100% { left: 150%; } }
+        .side-job-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #000, 0 0 40px rgba(255,255,255,0.8); }
+        .side-job-btn.cooldown {
+            animation: none;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-color: #333; opacity: 0.85; color: #888; text-shadow: none; cursor: not-allowed;
+        }
+        .side-job-btn.cooldown::before { display: none; }
+
+        .ai-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 50%, #ec4899 100%);
+            background-size: 200% 200%;
+            border: 2px solid #a5e5ff;
+            color: #fff;
+            box-shadow: 0 5px 0 #4c1d95, 0 0 20px rgba(0,212,255,0.5), 0 0 40px rgba(124,58,237,0.3);
+            animation: aiShine 3s linear infinite, aiPulse 2s ease-in-out infinite;
+            text-shadow: 0 0 8px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.9);
+            letter-spacing: 0.5px;
+        }
+        @keyframes aiShine { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+        @keyframes aiPulse {
+            0%,100% { box-shadow: 0 5px 0 #4c1d95, 0 0 15px rgba(0,212,255,0.5), 0 0 30px rgba(124,58,237,0.3); }
+            50% { box-shadow: 0 5px 0 #4c1d95, 0 0 30px rgba(0,212,255,0.9), 0 0 60px rgba(124,58,237,0.6); }
+        }
+        .ai-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -100%;
+            width: 100%; height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: sideJobSweep 3s ease-in-out infinite;
+        }
+        .ai-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #4c1d95, 0 0 50px rgba(0,212,255,1); }
+        .ai-btn.cooldown {
+            animation: none;
+            background: linear-gradient(135deg, #2a2a3a 0%, #1a1a28 100%);
+            border-color: #444; opacity: 0.85; color: #888; text-shadow: none; cursor: not-allowed;
+            box-shadow: 0 5px 0 #1a1a28;
+        }
+        .ai-btn.cooldown::before { display: none; }
+
+        .cheat-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffd966 50%, #7ce07c 100%);
+            background-size: 200% 200%;
+            border: 2px solid #ffe28c;
+            color: #2d1f0a;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+            box-shadow: 0 5px 0 #7a5216, 0 0 25px rgba(255,215,102,0.6);
+            animation: cheatShine 2s linear infinite, cheatPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes cheatShine { 0% { background-position: 0% 0%; } 100% { background-position: 200% 200%; } }
+        @keyframes cheatPulse {
+            0%,100% { box-shadow: 0 5px 0 #7a5216, 0 0 15px rgba(255,215,102,0.6); }
+            50% { box-shadow: 0 5px 0 #7a5216, 0 0 35px rgba(255,215,102,1); }
+        }
+        .cheat-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #7a5216; }
+
+        .donate-btn { background: linear-gradient(135deg, #e6b422, #c98a1a); border-color: #ffe28c; color: #2d1f0a; text-shadow: 0 1px 2px rgba(255,255,255,0.4); box-shadow: 0 5px 0 #7a5216; }
+
+        .currency-bar { display: flex; justify-content: space-around; gap: 6px; margin-bottom: 8px; padding: 8px; background: linear-gradient(135deg, rgba(41,121,255,0.2), rgba(0,0,0,0.5)); border-radius: 20px; border: 1px solid #2979ff; }
+        .currency-item { display: flex; align-items: center; gap: 6px; }
+        .currency-icon { font-size: 1.3rem; }
+        .currency-value { font-weight: 900; font-size: 1.15rem; color: #82b1ff; text-shadow: 0 0 12px rgba(41,121,255,0.8); }
+        .currency-label { font-size: 0.68rem; color: #4a9eff; text-transform: uppercase; letter-spacing: 1px; }
+
+        .debt-bar { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 14px; background: linear-gradient(135deg, rgba(200,40,40,0.25), rgba(80,10,10,0.5)); border-radius: 20px; border: 2px solid #c62828; box-shadow: inset 0 0 20px rgba(200,40,40,0.3); }
+        .debt-label { font-size: 0.7rem; color: #ff8a80; text-transform: uppercase; letter-spacing: 1px; font-weight: 900; }
+        .debt-value { font-weight: 900; font-size: 1rem; color: #ff5252; text-shadow: 0 0 12px rgba(255,82,82,0.8); font-family: 'Courier New', monospace; }
+        .debt-value.paid { color: #7ce07c; text-shadow: 0 0 12px rgba(124,224,124,0.8); }
+        .debt-progress { font-size: 0.65rem; color: #ffb0b0; }
+
+        .stats-bar { display: flex; justify-content: space-around; gap: 4px; margin-bottom: 10px; padding: 8px 4px; background: rgba(0,0,0,0.45); border-radius: 20px; border: 1px solid #4a7a9b; }
+        .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 0; min-width: 0; }
+        .stat-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px; color: #7aa8c9; text-align: center; }
+        .stat-value { font-weight: 900; font-size: 0.85rem; color: #82d8ff; }
+        .stat-value.prestige { color: #ff8fc7; }
+        .stat-value.manager { color: #ffd966; }
+        .stat-value.live { color: #7ce07c; animation: liveStatPulse 1s ease-in-out infinite; }
+        @keyframes liveStatPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .counter-block { text-align: center; margin-bottom: 10px; }
+        .counter-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 3px; color: #7aa8c9; }
+        .counter-value { font-size: 2.6rem; font-weight: 900; color: #82d8ff; text-shadow: 0 4px 0 #1a4a6b, 0 8px 16px black; line-height: 1.1; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .counter-value span { font-size: 1.6rem; }
+        .counter-value small { font-size: 0.9rem; color: #7ce07c; font-weight: normal; align-self: flex-end; margin-bottom: 6px; }
+        .score-pulse { animation: scorePulse 0.3s ease; }
+        @keyframes scorePulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); color: #b0e8ff; } 100% { transform: scale(1); } }
+
+        .terminal { background: linear-gradient(145deg, rgba(10,15,20,0.85), rgba(5,8,12,0.85)); border: 2px solid #2979ff; border-radius: 20px; padding: 12px; margin: 6px 0 16px; box-shadow: inset 0 0 30px rgba(41,121,255,0.2); position: relative; overflow: hidden; }
+        .terminal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #2979ff, transparent); animation: scanLine 3s linear infinite; }
+        @keyframes scanLine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .terminal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #1a4a6b; }
+        .terminal-title { font-size: 0.7rem; color: #4a9eff; letter-spacing: 2px; }
+        .terminal-status { font-size: 0.7rem; color: #7ce07c; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .ticker { display: flex; gap: 20px; white-space: nowrap; overflow: hidden; margin-bottom: 8px; padding: 4px 0; }
+        .ticker-item { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: bold; color: #82b1ff; animation: tickerScroll 20s linear infinite; }
+        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        .ticker-up { color: #7ce07c; }
+        .ticker-down { color: #ff6b6b; }
+        .main-asset { display: flex; justify-content: center; align-items: center; margin: 10px 0; position: relative; }
+        .asset-icon { font-size: 5.5rem; filter: drop-shadow(0 12px 12px rgba(0,0,0,0.7)); cursor: pointer; transition: transform 0.08s cubic-bezier(0.34,1.56,0.64,1); transform-origin: center; line-height: 1; touch-action: manipulation; animation: assetIdle 3s ease-in-out infinite; position: relative; }
+        @keyframes assetIdle { 0%,100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(2deg) translateY(-6px); } }
+        .asset-icon:active { transform: scale(0.8) rotate(-12deg) translateY(5px); filter: drop-shadow(0 4px 6px black) brightness(1.5); }
+        .asset-icon.cliked { animation: assetSlash 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes assetSlash { 0% { transform: scale(1) rotate(0deg); } 30% { transform: scale(1.4) rotate(-25deg); filter: drop-shadow(0 0 25px #82d8ff) brightness(2); } 60% { transform: scale(0.9) rotate(15deg); } 100% { transform: scale(1) rotate(0deg); } }
+        .asset-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.68rem; color: #4a9eff; letter-spacing: 1px; white-space: nowrap; }
+
+        .shockwave { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #82d8ff; transform: translate(-50%,-50%); pointer-events: none; animation: shockwave 0.6s ease-out forwards; }
+        @keyframes shockwave { 0% { width: 20px; height: 20px; opacity: 1; border-width: 4px; } 100% { width: 250px; height: 250px; opacity: 0; border-width: 1px; } }
+        .spark { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 1000; animation: sparkFly 0.7s ease-out forwards; }
+        @keyframes sparkFly { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); } }
+        .float-plus { position: fixed; font-size: 2rem; font-weight: 900; color: #7ce07c; text-shadow: 0 2px 0 #1b5e20, 0 4px 10px black, 0 0 20px #7ce07c; pointer-events: none; z-index: 999; animation: floatUp 1s cubic-bezier(0.34,1.56,0.64,1) forwards; white-space: nowrap; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(0.5) rotate(-10deg); } 40% { opacity: 1; transform: translateY(-40px) scale(1.4) rotate(5deg); } 100% { opacity: 0; transform: translateY(-120px) scale(1) rotate(10deg); } }
+        .coin-fall { position: fixed; font-size: 2rem; pointer-events: none; z-index: 8000; animation: coinFall linear forwards; }
+        @keyframes coinFall { 0% { transform: translateY(-50px) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(720deg); opacity: 0.8; } }
+        @keyframes adBannerPop { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3) rotate(-15deg); } 30% { opacity: 1; transform: translate(-50%,-50%) scale(1.3) rotate(5deg); } 60% { transform: translate(-50%,-50%) scale(1) rotate(-3deg); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5) rotate(0deg); } }
+        @keyframes pabloPop {
+            0% { transform: translate(-50%,-50%) scale(0.3) rotate(-15deg); opacity: 0; }
+            20% { transform: translate(-50%,-50%) scale(1.2) rotate(5deg); opacity: 1; }
+            40% { transform: translate(-50%,-50%) scale(1) rotate(-3deg); }
+            60% { transform: translate(-50%,-50%) scale(1.05) rotate(2deg); }
+            80% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(1.3) rotate(0deg); opacity: 0; }
+        }
+
+        .loan-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); z-index: 10000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .loan-overlay.show { display: flex; }
+        .loan-modal { background: linear-gradient(145deg, #1a0a0a, #2a1010); border: 3px solid #c62828; border-radius: 30px; padding: 30px 24px; max-width: 460px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 60px rgba(198,40,40,0.6); animation: loanPop 0.6s cubic-bezier(0.34,1.56,0.64,1); max-height: 90vh; overflow-y: auto; }
+        @keyframes loanPop { 0% { transform: scale(0.5) rotate(-10deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .loan-bank { font-size: 0.75rem; color: #ff8a80; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; font-weight: 900; }
+        .loan-emoji { font-size: 4rem; margin-bottom: 10px; filter: drop-shadow(0 0 20px rgba(198,40,40,0.9)); animation: adEmojiBounce 2s ease-in-out infinite; }
+        @keyframes adEmojiBounce { 0%, 100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.15) rotate(5deg); } }
+        .loan-title { font-size: 1.4rem; font-weight: 900; color: #ff5252; text-shadow: 0 3px 0 #7a1a1a, 0 6px 12px black; margin-bottom: 16px; letter-spacing: 1px; }
+        .loan-text { color: #e8dfc0; font-size: 0.95rem; line-height: 1.6; margin-bottom: 18px; text-align: left; }
+        .loan-text b { color: #ffd966; }
+        .loan-text .big-red { display: block; font-size: 1.6rem; color: #ff5252; font-weight: 900; text-align: center; margin: 12px 0; text-shadow: 0 0 20px rgba(255,82,82,0.8), 0 2px 4px black; letter-spacing: 1px; }
+        .loan-text .big-green { display: block; font-size: 1.6rem; color: #7ce07c; font-weight: 900; text-align: center; margin: 12px 0; text-shadow: 0 0 20px rgba(124,224,124,0.8), 0 2px 4px black; letter-spacing: 1px; }
+        .loan-terms { background: rgba(0,0,0,0.5); border: 2px dashed #c62828; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; }
+        .loan-term-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; color: #e8dfc0; font-size: 0.85rem; border-bottom: 1px dashed rgba(198,40,40,0.3); }
+        .loan-term-row:last-child { border-bottom: none; }
+        .loan-term-row span:first-child { color: #a8b88a; }
+        .loan-term-row span:last-child { color: #ffd966; font-weight: 900; }
+        .loan-ok-btn { display: block; width: 100%; background: linear-gradient(135deg, #c62828, #7f0000); border: 2px solid #ff8a80; border-radius: 30px; padding: 16px; font-weight: 900; font-size: 1.1rem; color: #fff; cursor: pointer; box-shadow: 0 6px 0 #4a0000; font-family: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .loan-ok-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #4a0000; }
+
+        .news-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-200px); background: linear-gradient(145deg, #1a2f3f, #0a1520); border: 2px solid #4a9eff; border-radius: 20px; padding: 14px 18px; max-width: 380px; width: calc(100% - 40px); z-index: 8500; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(74,158,255,0.4); transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
+        .news-toast.show { transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .news-toast-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(74,158,255,0.3); }
+        .news-toast-icon { font-size: 1.5rem; }
+        .news-toast-title { font-size: 0.75rem; color: #4a9eff; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 900; flex: 1; }
+        .news-toast-time { font-size: 0.7rem; color: #7aa8c9; }
+        .news-toast-text { font-size: 0.85rem; color: #bfe7ff; line-height: 1.4; margin-bottom: 6px; }
+        .news-toast-text b { color: #ffd966; }
+        .news-toast-risk { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; margin-top: 6px; font-weight: 900; }
+        .news-toast-risk.low { background: rgba(124,224,124,0.15); color: #7ce07c; border: 1px solid rgba(124,224,124,0.4); }
+        .news-toast-risk.medium { background: rgba(255,183,77,0.15); color: #ffb74d; border: 1px solid rgba(255,183,77,0.4); }
+        .news-toast-risk.high { background: rgba(255,82,82,0.15); color: #ff5252; border: 1px solid rgba(255,82,82,0.4); }
+        .news-toast-close { position: absolute; top: 8px; right: 12px; background: rgba(0,0,0,0.4); border: 1px solid #4a7a9b; color: #82d8ff; width: 24px; height: 24px; border-radius: 50%; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+
+        .vahar-toast {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.3) rotate(-15deg);
+            background: linear-gradient(145deg, #2a1a4a, #1a0d2e);
+            border: 4px solid #b388ff;
+            border-radius: 30px;
+            padding: 26px 24px;
+            max-width: 420px;
+            width: calc(100% - 40px);
+            z-index: 11500;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 80px rgba(179,136,255,0.8);
+            transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1), opacity 0.6s;
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+        }
+        .vahar-toast.show {
+            transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .vahar-emoji { font-size: 3.5rem; margin-bottom: 10px; animation: vaharBounce 0.6s ease-in-out infinite alternate; filter: drop-shadow(0 0 20px rgba(179,136,255,0.9)); }
+        @keyframes vaharBounce { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-10px) scale(1.1); } }
+        .vahar-title { font-size: 1.8rem; font-weight: 900; color: #d4b0ff; text-shadow: 0 0 20px #b388ff, 0 4px 8px black; margin-bottom: 12px; letter-spacing: 2px; }
+        .vahar-text { color: #bfe7ff; font-size: 0.95rem; line-height: 1.5; margin-bottom: 14px; }
+        .vahar-text b { color: #ffd966; }
+        .vahar-beta { background: rgba(255,183,77,0.15); border: 2px dashed #ffb74d; border-radius: 14px; padding: 10px 14px; color: #ffd180; font-size: 0.82rem; margin-bottom: 14px; font-weight: 900; }
+        .vahar-close { background: linear-gradient(135deg, #b388ff, #7c3aed); border: 2px solid #d4b0ff; border-radius: 30px; padding: 14px 28px; font-weight: 900; font-size: 1rem; color: #fff; cursor: pointer; box-shadow: 0 5px 0 #4c1d95; font-family: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .vahar-close:active { transform: translateY(4px); box-shadow: 0 1px 0 #4c1d95; }
+
+        .cheat-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); z-index: 10800; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .cheat-overlay.show { display: flex; }
+        .cheat-modal { background: linear-gradient(145deg, #2a1a0a, #1a1008); border: 3px solid #ffd966; border-radius: 30px; padding: 26px 22px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 60px rgba(255,215,102,0.6); animation: loanPop 0.5s cubic-bezier(0.34,1.56,0.64,1); max-height: 90vh; overflow-y: auto; }
+        .cheat-emoji { font-size: 3.5rem; margin-bottom: 10px; animation: adEmojiBounce 2s ease-in-out infinite; }
+        .cheat-title { font-size: 1.4rem; font-weight: 900; color: #ffd966; text-shadow: 0 3px 0 #7a5216; margin-bottom: 8px; letter-spacing: 1px; }
+        .cheat-subtitle { color: #a8b88a; font-size: 0.82rem; margin-bottom: 18px; }
+        .cheat-input {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #7a5216;
+            border-radius: 16px;
+            padding: 16px 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #ffd966;
+            text-align: center;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+            outline: none;
+            text-transform: lowercase;
+            transition: all 0.2s;
+        }
+        .cheat-input:focus {
+            border-color: #ffd966;
+            box-shadow: 0 0 20px rgba(255,215,102,0.6), inset 0 0 20px rgba(255,215,102,0.15);
+            color: #fff3b0;
+        }
+        .cheat-input::placeholder { color: #7a5216; letter-spacing: 1px; }
+        .cheat-apply { width: 100%; background: linear-gradient(135deg, #43a047, #1b5e20); border: 2px solid #a5d6a7; border-radius: 30px; padding: 16px; font-weight: 900; font-size: 1.05rem; color: #fff; cursor: pointer; box-shadow: 0 5px 0 #0d3d0f; margin-bottom: 10px; font-family: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .cheat-apply:active { transform: translateY(4px); box-shadow: 0 1px 0 #0d3d0f; }
+        .cheat-cancel { width: 100%; background: linear-gradient(135deg, #4a4a4a, #2a2a2a); border: 2px solid #888; border-radius: 30px; padding: 12px; font-weight: 900; font-size: 0.9rem; color: #ccc; cursor: pointer; box-shadow: 0 5px 0 #1a1a1a; font-family: inherit; }
+        .cheat-cancel:active { transform: translateY(4px); box-shadow: 0 1px 0 #1a1a1a; }
+        .cheat-hint {
+            background: rgba(255,215,102,0.08);
+            border: 1px dashed #ffd966;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            color: #e8dfc0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            text-align: left;
+        }
+        .highlight-big {
+            font-size: 1.6rem;
+            color: #ffd966;
+            font-weight: 900;
+            text-shadow: 0 0 15px #ffd966, 0 0 30px #ffaa00, 0 2px 4px black;
+            display: inline-block;
+            animation: letterPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes letterPulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .tax-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); z-index: 10500; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .tax-overlay.show { display: flex; }
+        .tax-modal { background: linear-gradient(145deg, #1a0a0a, #2a1010); border: 3px solid #c62828; border-radius: 30px; padding: 26px 22px; max-width: 460px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 60px rgba(198,40,40,0.7); animation: loanPop 0.6s cubic-bezier(0.34,1.56,0.64,1); max-height: 90vh; overflow-y: auto; }
+        .tax-emoji { font-size: 3.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(198,40,40,0.9)); animation: adEmojiBounce 2s ease-in-out infinite; }
+        .tax-title { font-size: 1.3rem; font-weight: 900; color: #ff5252; text-shadow: 0 3px 0 #7a1a1a; margin-bottom: 14px; letter-spacing: 1px; }
+        .tax-text { color: #e8dfc0; font-size: 0.9rem; line-height: 1.5; margin-bottom: 14px; text-align: left; }
+        .tax-text b { color: #ffd966; }
+        .tax-text .big-red { display: block; font-size: 1.4rem; color: #ff5252; font-weight: 900; text-align: center; margin: 10px 0; text-shadow: 0 0 20px rgba(255,82,82,0.8); }
+
+        .detector-question { background: rgba(0,0,0,0.5); border: 2px solid #ffd966; border-radius: 16px; padding: 16px; margin-bottom: 14px; text-align: center; }
+        .detector-question-text { font-size: 0.9rem; color: #bfe7ff; margin-bottom: 10px; }
+        .detector-math { font-size: 2.2rem; font-weight: 900; color: #ffd966; text-shadow: 0 0 20px rgba(255,215,102,0.8), 0 4px 8px black; font-family: 'Courier New', monospace; margin: 10px 0; letter-spacing: 2px; }
+        .detector-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .detector-answer { background: linear-gradient(145deg, #2a3a4a, #1a2a3a); border: 2px solid #4a7a9b; border-radius: 16px; padding: 14px; font-size: 1.3rem; font-weight: 900; color: #bfe7ff; cursor: pointer; transition: all 0.15s; font-family: 'Courier New', monospace; }
+        .detector-answer:hover { border-color: #82b1ff; }
+        .detector-answer:active { transform: scale(0.95); }
+        .detector-answer.correct { background: linear-gradient(145deg, #43a047, #1b5e20); border-color: #a5d6a7; color: #fff; }
+        .detector-answer.wrong { background: linear-gradient(145deg, #c62828, #7f0000); border-color: #ff8a80; color: #fff; }
+        .detector-timer { font-size: 0.8rem; color: #ff8a80; margin-top: 8px; font-weight: 900; }
+
+        .donate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); z-index: 7500; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .donate-overlay.show { display: flex; }
+        .donate-modal { background: linear-gradient(145deg, #3a2f1a, #1f1a0e); border: 3px solid #e6b422; border-radius: 30px; padding: 26px 22px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 60px rgba(230,180,34,0.6); animation: adPop 0.5s cubic-bezier(0.34,1.56,0.64,1); max-height: 90vh; overflow-y: auto; }
+        @keyframes adPop { 0% { transform: scale(0.5) rotate(-10deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .donate-emoji { font-size: 3.5rem; margin-bottom: 8px; }
+        .donate-title { font-size: 1.5rem; font-weight: 900; color: #ffd966; text-shadow: 0 3px 0 #7a5216; margin-bottom: 14px; }
+        .donate-instruction { color: #e8dfc0; font-size: 0.9rem; margin-bottom: 16px; }
+        .card-details { background: linear-gradient(145deg, #1a1a1a, #0d0d0d); border: 2px solid #ffd966; border-radius: 20px; padding: 18px 16px; margin-bottom: 16px; text-align: left; }
+        .card-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px dashed rgba(230,180,34,0.3); gap: 10px; flex-wrap: wrap; }
+        .card-row:last-child { border-bottom: none; }
+        .card-label { font-size: 0.72rem; color: #a8b88a; letter-spacing: 1px; }
+        .card-value { font-size: 1.05rem; font-weight: 900; color: #ffd966; font-family: 'Courier New', monospace; display: flex; align-items: center; gap: 8px; }
+        .copy-btn { background: linear-gradient(135deg, #e6b422, #c98a1a); border: 1px solid #ffe28c; border-radius: 12px; padding: 4px 10px; font-size: 0.7rem; font-weight: bold; color: #2d1f0a; cursor: pointer; font-family: inherit; }
+        .copy-btn.copied { background: linear-gradient(135deg, #43a047, #1b5e20); color: #fff; }
+        .donate-note { background: rgba(230,180,34,0.12); border-left: 3px solid #ffd966; border-radius: 12px; padding: 12px 14px; color: #e8dfc0; font-size: 0.82rem; text-align: left; margin-bottom: 18px; }
+        .donate-note b { color: #ffd966; }
+        .donate-ok-btn { width: 100%; background: linear-gradient(135deg, #e6b422, #c98a1a); border: 2px solid #ffe28c; border-radius: 30px; padding: 16px; font-weight: 900; font-size: 1.1rem; color: #2d1f0a; cursor: pointer; box-shadow: 0 6px 0 #7a5216; font-family: inherit; }
+        .donate-ok-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #7a5216; }
+
+        .businesses-section { margin-top: 14px; padding: 14px 10px; background: linear-gradient(145deg, rgba(124,224,124,0.1), rgba(0,0,0,0.5)); border-radius: 24px; border: 2px solid #7ce07c; }
+        .businesses-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+        .businesses-title { font-size: 1.05rem; font-weight: 900; color: #b0ffb0; text-shadow: 0 2px 0 #1b5e20; }
+        .collect-all-btn { background: linear-gradient(135deg, #43a047, #1b5e20); border: 2px solid #a5d6a7; border-radius: 20px; padding: 8px 14px; font-weight: 900; font-size: 0.75rem; color: #fff; cursor: pointer; font-family: inherit; box-shadow: 0 4px 0 #0d3d0f, 0 0 15px rgba(124,224,124,0.4); animation: collectAllPulse 1.5s ease-in-out infinite; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        @keyframes collectAllPulse { 0%,100% { box-shadow: 0 4px 0 #0d3d0f, 0 0 10px rgba(124,224,124,0.4); } 50% { box-shadow: 0 4px 0 #0d3d0f, 0 0 25px rgba(124,224,124,0.9); } }
+        .collect-all-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #0d3d0f; }
+        .collect-all-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+
+        .businesses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+        .business-card { background: linear-gradient(145deg, rgba(26,47,26,0.9), rgba(15,26,15,0.9)); border-radius: 18px; padding: 10px 6px; border: 2px solid #7ce07c; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; box-shadow: 0 6px 0 #05080c; position: relative; overflow: hidden; }
+        .business-card:active { transform: translateY(4px) scale(0.97); }
+        .business-card.disabled { opacity: 0.55; filter: grayscale(0.7); pointer-events: none; }
+        .business-card.can-buy { animation: businessPulse 1.6s ease-in-out infinite; }
+        @keyframes businessPulse { 0%,100% { box-shadow: 0 6px 0 #05080c, 0 0 0px rgba(124,224,124,0); } 50% { box-shadow: 0 6px 0 #05080c, 0 0 30px rgba(124,224,124,0.8); } }
+        .business-card.has-money { border-color: #ffd966; animation: moneyReadyGlow 1.5s ease-in-out infinite; }
+        @keyframes moneyReadyGlow { 0%,100% { box-shadow: 0 6px 0 #05080c, 0 0 10px rgba(255,215,100,0.4); } 50% { box-shadow: 0 6px 0 #05080c, 0 0 25px rgba(255,215,100,1); } }
+        .business-emoji { font-size: 2rem; }
+        .business-name { font-weight: bold; font-size: 0.78rem; color: #b0ffb0; }
+        .business-income { font-size: 0.68rem; color: #7aa8c9; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 20px; }
+        .business-cost { font-weight: bold; font-size: 0.78rem; color: #7ce07c; }
+        .business-owned { font-size: 0.65rem; color: #ffd966; font-weight: bold; }
+        .business-meme { font-size: 0.6rem; color: #ffb74d; font-style: italic; margin-top: 2px; }
+        .business-kassa { font-size: 0.75rem; color: #ffd966; font-weight: 900; background: linear-gradient(135deg, rgba(255,215,100,0.15), rgba(0,0,0,0.5)); padding: 3px 8px; border-radius: 20px; margin-top: 2px; border: 1px solid rgba(255,215,100,0.5); text-shadow: 0 0 8px rgba(255,215,100,0.5); }
+        .business-collect-btn { background: linear-gradient(135deg, #43a047, #1b5e20); border: 1px solid #a5d6a7; border-radius: 14px; padding: 4px 10px; font-weight: bold; font-size: 0.7rem; color: #fff; cursor: pointer; font-family: inherit; margin-top: 2px; box-shadow: 0 3px 0 #0d3d0f; }
+        .business-collect-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #0d3d0f; }
+
+        .stocks-section { margin-top: 14px; padding: 14px 10px; background: linear-gradient(145deg, rgba(179,136,255,0.1), rgba(0,0,0,0.5)); border-radius: 24px; border: 2px solid #b388ff; position: relative; }
+        .stocks-title { font-size: 1.05rem; font-weight: 900; text-align: center; color: #d4b0ff; text-shadow: 0 2px 0 #4a1a6b; margin-bottom: 6px; }
+        .stocks-info { text-align: center; color: #bfe7ff; font-size: 0.72rem; margin-bottom: 10px; }
+        .stocks-grid { display: flex; flex-direction: column; gap: 8px; }
+        .stock-row { display: flex; align-items: center; gap: 8px; background: linear-gradient(145deg, rgba(26,26,47,0.9), rgba(15,15,26,0.9)); border: 2px solid #4a3a6b; border-radius: 16px; padding: 10px 12px; transition: all 0.3s ease; position: relative; }
+        .stock-row.up { border-color: #7ce07c; }
+        .stock-row.down { border-color: #ff6b6b; }
+        .stock-row.ai-recommend { border-color: #00d4ff; animation: aiRecommend 1s ease-in-out infinite; background: linear-gradient(145deg, rgba(0,80,120,0.5), rgba(80,40,140,0.5)); transform: scale(1.02); z-index: 2; }
+        @keyframes aiRecommend { 0%,100% { box-shadow: 0 0 15px rgba(0,212,255,0.6), 0 0 30px rgba(124,58,237,0.3); } 50% { box-shadow: 0 0 30px rgba(0,212,255,1), 0 0 60px rgba(124,58,237,0.7); } }
+        .stock-row.ai-recommend::before { content: '🤖 ЛУЧШАЯ'; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #00d4ff, #7c3aed); color: #fff; font-size: 0.65rem; font-weight: 900; padding: 3px 10px; border-radius: 20px; white-space: nowrap; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(0,212,255,0.6); }
+        .stock-emoji { font-size: 1.5rem; }
+        .stock-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .stock-name { font-weight: bold; font-size: 0.82rem; color: #d4b0ff; }
+        .stock-price { font-size: 0.75rem; color: #82d8ff; font-family: 'Courier New', monospace; font-weight: bold; }
+        .stock-change { font-size: 0.7rem; font-weight: bold; }
+        .stock-change.up { color: #7ce07c; }
+        .stock-change.down { color: #ff6b6b; }
+        .stock-profit { font-size: 0.68rem; font-weight: bold; margin-top: 1px; }
+        .stock-profit.up { color: #7ce07c; }
+        .stock-profit.down { color: #ff6b6b; }
+        .stock-owned { font-size: 0.65rem; color: #7aa8c9; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 20px; white-space: nowrap; }
+        .stock-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .stock-btn { border: 2px solid; border-radius: 12px; padding: 6px 10px; font-weight: bold; font-size: 0.68rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .stock-btn.buy { background: linear-gradient(135deg, #43a047, #1b5e20); border-color: #a5d6a7; color: #fff; box-shadow: 0 3px 0 #0d3d0f; }
+        .stock-btn.buy:active { transform: translateY(3px); box-shadow: 0 0 0 #0d3d0f; }
+        .stock-btn.sell { background: linear-gradient(135deg, #c62828, #7f0000); border-color: #ff8a80; color: #fff; box-shadow: 0 3px 0 #4a0000; }
+        .stock-btn.sell:active { transform: translateY(3px); box-shadow: 0 0 0 #4a0000; }
+        .stock-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+        .upgrades-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 6px; }
+        .upgrade-card { background: linear-gradient(145deg, rgba(26,47,63,0.9), rgba(15,26,42,0.9)); border-radius: 22px; padding: 12px 6px 8px; box-shadow: 0 8px 0 #05080c; border: 1px solid #4a7a9b; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .upgrade-card:active { transform: translateY(5px) scale(0.97); }
+        .upgrade-card.disabled { opacity: 0.5; filter: grayscale(0.7); pointer-events: none; }
+        .upgrade-card.can-buy { animation: canBuyPulse 1.5s ease-in-out infinite; }
+        @keyframes canBuyPulse { 0%,100% { box-shadow: 0 8px 0 #05080c; } 50% { box-shadow: 0 8px 0 #05080c, 0 0 25px rgba(41,121,255,0.6); } }
+        .upgrade-card.stock-type { background: linear-gradient(145deg, rgba(42,63,26,0.9), rgba(21,32,15,0.9)); border-color: #7ce07c; }
+        .upgrade-card.stock-type .upgrade-name { color: #b0ffb0; }
+        .upgrade-card.stock-type .upgrade-cost { color: #7ce07c; }
+        .upgrade-card.bond-type { background: linear-gradient(145deg, rgba(63,42,26,0.9), rgba(32,21,15,0.9)); border-color: #ffb74d; }
+        .upgrade-card.bond-type .upgrade-name { color: #ffd180; }
+        .upgrade-card.bond-type .upgrade-cost { color: #ffb74d; }
+        .upgrade-card.realty-type { background: linear-gradient(145deg, rgba(63,26,63,0.9), rgba(32,16,32,0.9)); border-color: #e88fc0; }
+        .upgrade-card.realty-type .upgrade-name { color: #ffd0e8; }
+        .upgrade-card.realty-type .upgrade-cost { color: #e88fc0; }
+        .upgrade-card.business-type { background: linear-gradient(145deg, rgba(74,42,26,0.9), rgba(42,21,15,0.9)); border-color: #ff6b6b; }
+        .upgrade-card.business-type .upgrade-name { color: #ffb0b0; }
+        .upgrade-card.business-type .upgrade-cost { color: #ff6b6b; }
+        .upgrade-card.venture-type { background: linear-gradient(145deg, rgba(42,26,74,0.9), rgba(21,15,42,0.9)); border-color: #b388ff; }
+        .upgrade-card.venture-type .upgrade-name { color: #d4b0ff; }
+        .upgrade-card.venture-type .upgrade-cost { color: #b388ff; }
+        .upgrade-emoji { font-size: 2rem; }
+        .upgrade-name { font-weight: bold; font-size: 0.82rem; color: #bfe7ff; }
+        .upgrade-info { font-size: 0.68rem; color: #7aa8c9; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 30px; }
+        .upgrade-cost { font-weight: bold; color: #82d8ff; font-size: 0.82rem; }
+        .upgrade-owned { font-size: 0.68rem; color: #7ce07c; font-weight: bold; }
+
+        .manager-section { margin-top: 14px; padding: 14px 12px; background: linear-gradient(145deg, rgba(41,121,255,0.15), rgba(0,0,0,0.5)); border-radius: 24px; border: 2px solid #2979ff; }
+        .manager-title { font-size: 1.05rem; font-weight: 900; text-align: center; color: #82d8ff; margin-bottom: 10px; }
+        .manager-info { text-align: center; color: #bfe7ff; font-size: 0.82rem; margin-bottom: 12px; }
+        .manager-info b { color: #82d8ff; }
+        .manager-info .hint { color: #7ce07c; font-size: 0.75rem; display: block; margin-top: 4px; }
+        .manager-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+        .manager-card { background: linear-gradient(145deg, rgba(26,42,58,0.9), rgba(15,26,37,0.9)); border-radius: 18px; padding: 10px 6px; border: 2px solid #2979ff; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; box-shadow: 0 6px 0 #05080c; }
+        .manager-card.disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; }
+        .manager-card.can-buy { animation: managerPulse 1.6s ease-in-out infinite; }
+        @keyframes managerPulse { 0%,100% { box-shadow: 0 6px 0 #05080c; } 50% { box-shadow: 0 6px 0 #05080c, 0 0 30px rgba(41,121,255,0.8); } }
+        .manager-emoji { font-size: 1.7rem; }
+        .manager-name { font-weight: bold; font-size: 0.78rem; color: #bfe7ff; }
+        .manager-desc { font-size: 0.65rem; color: #7aa8c9; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 20px; }
+        .manager-cost { font-weight: bold; font-size: 0.78rem; color: #ffd966; }
+        .manager-owned { font-size: 0.65rem; color: #7ce07c; font-weight: bold; }
+
+        .extra-buttons { display: flex; gap: 8px; margin-top: 14px; }
+        .extra-btn { flex: 1; background: linear-gradient(145deg, rgba(42,58,74,0.9), rgba(26,42,58,0.9)); border: 1px solid #4a7a9b; border-radius: 22px; padding: 12px 8px; font-weight: bold; font-size: 0.78rem; color: #bfe7ff; box-shadow: 0 6px 0 #05080c; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-family: inherit; }
+        .extra-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #05080c; }
+        .extra-btn.debt { background: linear-gradient(145deg, rgba(74,26,26,0.9), rgba(42,15,15,0.9)); border-color: #ff5252; color: #ffb0b0; animation: debtPulse 2s ease-in-out infinite; }
+        .extra-btn.debt:disabled { opacity: 0.5; pointer-events: none; animation: none; }
+        @keyframes debtPulse { 0%, 100% { box-shadow: 0 6px 0 #05080c, 0 0 20px rgba(255,82,82,0.3); } 50% { box-shadow: 0 6px 0 #05080c, 0 0 35px rgba(255,82,82,0.8); } }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 5000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: linear-gradient(145deg, #1a2f3f, #0a1520); border: 2px solid #4a7a9b; border-radius: 30px; padding: 24px 20px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto; animation: modalPop 0.4s cubic-bezier(0.34,1.56,0.64,1); position: relative; }
+        @keyframes modalPop { 0% { transform: scale(0.7) translateY(40px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .modal-title { font-size: 1.35rem; font-weight: 900; text-align: center; color: #82d8ff; text-shadow: 0 3px 0 #1a4a6b; margin-bottom: 16px; }
+        .modal-close { position: absolute; top: 10px; right: 14px; background: rgba(0,0,0,0.4); border: 1px solid #4a7a9b; color: #82d8ff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+        .modal-text { color: #bfe7ff; font-size: 0.92rem; line-height: 1.5; text-align: center; margin-bottom: 16px; }
+        .modal-text b { color: #82d8ff; }
+        .modal-text .pink { color: #ff8fc7; font-weight: bold; }
+        .modal-text .green { color: #7ce07c; font-weight: bold; }
+        .modal-btn { display: block; width: 100%; background: linear-gradient(135deg, #2979ff, #0d47a1); border: 1px solid #82b1ff; border-radius: 30px; padding: 14px; font-weight: 900; font-size: 1rem; color: #fff; cursor: pointer; box-shadow: 0 5px 0 #0a2e6b; margin-bottom: 10px; font-family: inherit; }
+        .modal-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #0a2e6b; }
+        .modal-btn.debt-confirm { background: linear-gradient(135deg, #c62828, #7f0000); border-color: #ff8a80; color: #fff; box-shadow: 0 5px 0 #4a0000; }
+        .modal-btn.disabled { opacity: 0.5; pointer-events: none; }
+
+        .stat-section-title { font-size: 0.82rem; font-weight: 900; color: #82d8ff; text-transform: uppercase; letter-spacing: 2px; margin: 14px 0 8px; padding: 4px 0 4px 10px; border-left: 3px solid #2979ff; text-align: left; }
+        .stat-list { display: flex; flex-direction: column; gap: 6px; }
+        .stat-row { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.35); border: 1px solid #1a4a6b; border-radius: 14px; padding: 8px 12px; }
+        .stat-emoji { font-size: 1.4rem; flex-shrink: 0; }
+        .stat-info { flex: 1; text-align: left; min-width: 0; }
+        .stat-name { font-weight: bold; font-size: 0.78rem; color: #bfe7ff; }
+        .stat-mult { font-size: 0.68rem; color: #7aa8c9; background: rgba(41,121,255,0.2); padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+        .stat-detail { font-size: 0.68rem; color: #7aa8c9; }
+        .stat-earned { font-weight: 900; font-size: 0.85rem; color: #7ce07c; flex-shrink: 0; }
+        .stat-earned.up { color: #7ce07c; }
+        .stat-earned.down { color: #ff6b6b; }
+
+        .ach-list { display: flex; flex-direction: column; gap: 8px; }
+        .ach-item { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.35); border: 1px solid #1a4a6b; border-radius: 16px; padding: 10px 14px; }
+        .ach-item.locked { opacity: 0.45; filter: grayscale(0.8); }
+        .ach-item.unlocked { border-color: #2979ff; background: linear-gradient(135deg, rgba(41,121,255,0.15), rgba(0,0,0,0.35)); }
+        .ach-item.marlboro.unlocked { border-color: #7fd4ff; }
+        .ach-icon { font-size: 1.7rem; flex-shrink: 0; }
+        .ach-info { flex: 1; text-align: left; }
+        .ach-name { font-weight: bold; font-size: 0.85rem; color: #bfe7ff; }
+        .ach-desc { font-size: 0.7rem; color: #7aa8c9; }
+        .ach-check { font-size: 1.2rem; color: #7ce07c; }
+
+        .ach-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px); background: linear-gradient(135deg, #2979ff, #0d47a1); color: #fff; padding: 14px 24px; border-radius: 40px; font-weight: 900; font-size: 0.9rem; z-index: 6000; border: 2px solid #82b1ff; transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1); display: flex; align-items: center; gap: 8px; max-width: 90%; text-align: center; }
+        .ach-toast.show { transform: translateX(-50%) translateY(0); }
+        .ach-toast.marlboro { background: linear-gradient(135deg, #7fd4ff, #4a9ccc); color: #0a1a26; }
+        .ach-toast.live { background: linear-gradient(135deg, #00c853, #00701a); }
+        .ach-toast.pablo { background: linear-gradient(135deg, #7a1a1a, #4a0000); color: #ffd966; border-color: #ffd966; }
+        .ach-toast.billion { background: linear-gradient(135deg, #00d4ff, #7c3aed); color: #fff; border-color: #7fd4ff; }
+
+        .tutorial-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9000; pointer-events: none; display: none; }
+        .tutorial-overlay.show { display: block; }
+        .tutorial-arrow { position: fixed; font-size: 3rem; color: #ffd966; text-shadow: 0 0 20px #ffd966, 0 0 40px #ffaa00, 0 4px 8px black; animation: arrowBounce 1s ease-in-out infinite; z-index: 9100; pointer-events: none; filter: drop-shadow(0 0 10px #ffd966); }
+        @keyframes arrowBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(15px) scale(1.1); } }
+        .tutorial-arrow.up { animation: arrowBounceUp 1s ease-in-out infinite; }
+        @keyframes arrowBounceUp { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.1); } }
+        .tutorial-arrow.side { animation: arrowBounceSide 1s ease-in-out infinite; }
+        @keyframes arrowBounceSide { 0%, 100% { transform: translateX(0) scale(1); } 50% { transform: translateX(15px) scale(1.1); } }
+        .tutorial-label { position: fixed; background: linear-gradient(135deg, #ffd966, #ffaa00); color: #2d1f0a; font-weight: 900; font-size: 0.85rem; padding: 8px 14px; border-radius: 20px; z-index: 9100; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 20px rgba(255,217,102,0.6); border: 2px solid #ffe28c; animation: labelPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes labelPop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .tutorial-close { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #43a047, #1b5e20); color: #fff; font-weight: 900; font-size: 0.9rem; padding: 14px 28px; border-radius: 30px; border: 2px solid #a5d6a7; cursor: pointer; z-index: 9200; pointer-events: auto; box-shadow: 0 6px 0 #0d3d0f, 0 10px 30px rgba(0,0,0,0.7); font-family: inherit; }
+        .tutorial-close:active { transform: translateX(-50%) translateY(4px); box-shadow: 0 2px 0 #0d3d0f; }
+        .tutorial-dark { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9000; pointer-events: none; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 480px) {
+            .game-container { padding: 12px 10px 16px; border-radius: 30px; }
+            .counter-value { font-size: 2rem; }
+            .asset-icon { font-size: 4.2rem; }
+            .upgrades-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; }
+            .businesses-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; }
+            .upgrade-card { padding: 9px 3px 6px; }
+            .upgrade-emoji { font-size: 1.6rem; }
+            .upgrade-name { font-size: 0.7rem; }
+            .top-btn { padding: 10px 8px; font-size: 0.65rem; }
+            .side-job-btn { font-size: 0.78rem !important; }
+            .stat-label { font-size: 0.5rem; }
+            .stat-value { font-size: 0.7rem; }
+            .extra-btn { font-size: 0.68rem; padding: 10px 4px; }
+            .stock-btn { padding: 5px 7px; font-size: 0.62rem; }
+            .card-value { font-size: 0.85rem; }
+            .collect-all-btn { padding: 6px 10px; font-size: 0.68rem; }
+            .tutorial-arrow { font-size: 2.2rem; }
+            .tutorial-label { font-size: 0.7rem; padding: 6px 10px; }
+            .loan-modal, .tax-modal, .cheat-modal { padding: 20px 16px; }
+            .vahar-title { font-size: 1.4rem; }
+            .detector-math { font-size: 1.8rem; }
+        }
+        @media (max-width: 360px) {
+            .upgrades-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
+            .businesses-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
+            .upgrade-name { font-size: 0.62rem; }
+            .extra-btn { font-size: 0.6rem; padding: 8px 3px; }
+            .top-btn { font-size: 0.58rem; padding: 9px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- КРЕДИТ -->
+    <div class="loan-overlay" id="loanOverlay">
+        <div class="loan-modal">
+            <div class="loan-bank">🏦 КРЕДИТНАЯ КОНТОРА «ГОРНЫЙ КАПИТАЛ»</div>
+            <div class="loan-emoji">📜</div>
+            <div class="loan-title">ОДОБРЕНО!</div>
+            <div class="loan-text">
+                Уважаемый клиент! <b>Благодарим вас за доверие!</b><br><br>
+                Наш банк одобрил вам <b>льготный кредит</b> на развитие бизнеса в горах.
+                <span class="big-green">💰 1 000 000 ₽</span>
+                <span class="big-red">К ВОЗВРАТУ: 2 000 000 ₽</span>
+                <i style="color:#a8b88a; font-size:0.8rem;">Помните: горы не прощают долгов!</i>
+            </div>
+            <div class="loan-terms">
+                <div class="loan-term-row"><span>Выдано:</span><span>1 000 000 ₽</span></div>
+                <div class="loan-term-row"><span>К возврату:</span><span>2 000 000 ₽</span></div>
+                <div class="loan-term-row"><span>Ставка:</span><span>100%</span></div>
+                <div class="loan-term-row"><span>Срок:</span><span>Бессрочно</span></div>
+                <div class="loan-term-row"><span>Просрочка:</span><span>Горы заберут своё</span></div>
+            </div>
+            <button class="loan-ok-btn" id="loanOk">ПРИНЯТЬ КРЕДИТ 💰</button>
+        </div>
+    </div>
+
+    <!-- ВАХАР -->
+    <div class="vahar-toast" id="vaharToast">
+        <div class="vahar-emoji">🎉</div>
+        <div class="vahar-title">ВАХАР, С ТХАЯР!</div>
+        <div class="vahar-text">
+            <b>Спасибо, что играешь!</b><br>
+            Это <b>бета-тест</b> — игра ещё в разработке. Некоторые функции могут работать нестабильно, тексты могут меняться, а баланс — дорабатываться.
+        </div>
+        <div class="vahar-beta">
+            🧪 BETA-ТЕСТ • v0.9<br>
+            <span style="font-size:0.72rem; font-weight:normal; color:#bfe7ff;">Пожалуйста, сообщай о багах автору</span>
+        </div>
+        <button class="vahar-close" id="vaharClose">ПОНЯЛ! 🚀</button>
+    </div>
+
+    <!-- ЧИТ-КОДЫ -->
+    <div class="cheat-overlay" id="cheatOverlay">
+        <div class="cheat-modal">
+            <div class="cheat-emoji">🎁</div>
+            <div class="cheat-title">ЧИТ-КОДЫ</div>
+            <div class="cheat-subtitle">Введи секретный код и получи награду!</div>
+            <input type="text" class="cheat-input" id="cheatInput" placeholder="введи код..." maxlength="30" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <div class="cheat-hint">
+                💡 <b>Подсказка от автора:</b><br><br>
+                <span style="display:inline-block; font-size:0.95rem; line-height:1.7; letter-spacing:0.5px; color:#e8dfc0;">
+                    <span class="highlight-big">Ж</span><span class="highlight-big">е</span><span style="color:#a8b88a;">лаю</span> <span style="color:#a8b88a;">тебе</span> <span style="color:#a8b88a;">удачи,</span> <span style="color:#a8b88a;">дорогой</span> <span style="color:#a8b88a;">друг!</span><br>
+                    <span style="color:#a8b88a;">Помни,</span> <span style="color:#a8b88a;">код</span> <span style="color:#a8b88a;">—</span> <span style="color:#a8b88a;">это</span> <span style="color:#a8b88a;">как</span> <span style="color:#a8b88a;">старая</span> <span style="color:#a8b88a;">лезгинская</span> <span style="color:#a8b88a;">поговорка:</span><br>
+                    <span style="color:#bfe7ff; font-style:italic;">"<span class="highlight-big">Ж</span>изнь <span class="highlight-big">е</span>дина, <span class="highlight-big">В</span>се <span style="color:#a8b88a;">мы</span> <span class="highlight-big">Б</span>ратья <span style="color:#a8b88a;">на</span> <span style="color:#a8b88a;">земле</span>"</span><br><br>
+                    <span style="font-size:0.75rem; color:#a8b88a;">Смотри на большие буквы внимательно 🤫</span>
+                </span>
+            </div>
+            <button class="cheat-apply" id="cheatApply">ПРИМЕНИТЬ 🎁</button>
+            <button class="cheat-cancel" id="cheatCancel">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="news-toast" id="newsToast">
+        <button class="news-toast-close" onclick="document.getElementById('newsToast').classList.remove('show')">✕</button>
+        <div class="news-toast-header">
+            <span class="news-toast-icon" id="newsIcon">📰</span>
+            <span class="news-toast-title" id="newsTitle">МИРОВЫЕ НОВОСТИ</span>
+            <span class="news-toast-time">сейчас</span>
+        </div>
+        <div class="news-toast-text" id="newsText"></div>
+        <div class="news-toast-risk" id="newsRisk"></div>
+    </div>
+
+    <div class="tax-overlay" id="taxOverlay">
+        <div class="tax-modal" id="taxModalContent"></div>
+    </div>
+
+    <div class="game-container">
+        <div class="live-indicator" id="liveIndicator">
+            <div class="live-dot"></div>
+            <span>🐂 БЫЧИЙ РЫНОК ×2</span>
+            <span id="liveTimer">05:00</span>
+        </div>
+
+        <div class="top-bar">
+            <button class="top-btn side-job-btn" id="sideJobBtn">🤫 ТСС</button>
+            <button class="top-btn ai-btn" id="aiBtn">🤖 ИИ</button>
+            <button class="top-btn cheat-btn" id="cheatBtn">🎁</button>
+            <button class="top-btn donate-btn" id="donateBtn">💰</button>
+        </div>
+
+        <div class="currency-bar">
+            <div class="currency-item">
+                <span class="currency-icon">📊</span>
+                <div>
+                    <div class="currency-label">Дивиденды</div>
+                    <div class="currency-value" id="viewsCount">0</div>
+                </div>
+            </div>
+            <div class="currency-item">
+                <span class="currency-icon">📈</span>
+                <div>
+                    <div class="currency-label">В секунду</div>
+                    <div class="currency-value" id="viewsPerSec">0</div>
+                </div>
+            </div>
+            <div class="currency-item">
+                <span class="currency-icon">🤑</span>
+                <div>
+                    <div class="currency-label">Подработка</div>
+                    <div class="currency-value" id="adProgress">30</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="debt-bar" id="debtBar">
+            <div>
+                <div class="debt-label">💸 Долг кредитной конторе</div>
+                <div class="debt-value" id="debtValue">2 000 000 ₽</div>
+            </div>
+            <div class="debt-progress" id="debtProgress">0%</div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">В сек</div>
+                <div class="stat-value" id="statPerSec">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Сделок</div>
+                <div class="stat-value" id="statClicks">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Выплачено</div>
+                <div class="stat-value prestige" id="statPrestige">0 ₽</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Налоговая</div>
+                <div class="stat-value manager" id="statManager">0/0</div>
+            </div>
+            <div class="stat-item" id="statLiveItem" style="display:none;">
+                <div class="stat-label">Бык</div>
+                <div class="stat-value live" id="statLive">×2</div>
+            </div>
+        </div>
+
+        <div class="counter-block">
+            <div class="counter-label">Капитал</div>
+            <div class="counter-value" id="counterDisplay">
+                <span>💰</span> <span id="score">0</span>
+                <small id="incomeHint"></small>
+            </div>
+        </div>
+
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-title">📊 ЛЕЗГИ БИРЖА</div>
+                <div class="terminal-status" id="terminalStatus">● LIVE</div>
+            </div>
+            <div class="ticker">
+                <div class="ticker-item">📈 ЛГ <span class="ticker-up">+2.4%</span></div>
+                <div class="ticker-item">📉 ФЛНКА <span class="ticker-down">-1.2%</span></div>
+                <div class="ticker-item">📈 КБ <span class="ticker-up">+5.7%</span></div>
+                <div class="ticker-item">📈 ДРБ <span class="ticker-up">+3.1%</span></div>
+                <div class="ticker-item">📉 АТ <span class="ticker-down">-0.8%</span></div>
+            </div>
+            <div class="main-asset" id="assetArea">
+                <div class="asset-icon" id="assetIcon">💰</div>
+                <div class="asset-label">НАЖМИ — +100 ₽</div>
+            </div>
+        </div>
+
+        <div class="businesses-section">
+            <div class="businesses-header">
+                <div class="businesses-title">🏪 БИЗНЕСЫ</div>
+                <button class="collect-all-btn" id="collectAllBtn" disabled>💰 Собрать всё</button>
+            </div>
+            <div class="businesses-grid" id="businessesContainer"></div>
+        </div>
+
+        <div class="stocks-section">
+            <div class="stocks-title">📈 ФОНДОВЫЙ РЫНОК</div>
+            <div class="stocks-info">Купи дёшево — продай дорого. Нажми 🤖 чтобы ИИ подсказал лучшую акцию!</div>
+            <div class="stocks-grid" id="stocksContainer"></div>
+        </div>
+
+        <div class="upgrades-grid" id="upgradesContainer"></div>
+
+        <div class="manager-section">
+            <div class="manager-title">💼 ПАРТНЁРЫ</div>
+            <div class="manager-info">
+                Каждый партнёр даёт <b>+1 к сделке</b> за каждые <b>1 000 ₽</b> капитала.<br>
+                <span class="hint">Нанять за 📊 дивиденды.</span>
+            </div>
+            <div class="manager-grid" id="managerContainer"></div>
+        </div>
+
+        <div class="extra-buttons">
+            <button class="extra-btn debt" id="prestigeBtn">💸 Выплатить кредит</button>
+            <button class="extra-btn" id="statsBtn">📊 Стата</button>
+            <button class="extra-btn" id="achBtn">🏆 <span id="achCount">0/24</span></button>
+        </div>
+    </div>
+
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-dark"></div>
+        <div class="tutorial-arrow up" style="top: 280px; left: 50%; transform: translateX(-50%);" id="arrow1">⬆️</div>
+        <div class="tutorial-label" style="top: 240px; left: 50%; transform: translateX(-50%);" id="label1">👆 Жми на деньги — получай 100 ₽!</div>
+        <div class="tutorial-arrow side" style="top: 65px; right: 20px;" id="arrow2">➡️</div>
+        <div class="tutorial-label" style="top: 20px; right: 20px; white-space: normal; max-width: 200px; font-size: 0.72rem;" id="label2">🤫 ТСС — подработка<br>🤖 ИИ — совет по акциям<br>🎁 — чит-коды</div>
+        <button class="tutorial-close" id="tutorialClose">ПОНЯЛ! 🚀</button>
+    </div>
+
+    <div class="donate-overlay" id="donateOverlay">
+        <div class="donate-modal">
+            <div class="donate-emoji">💰</div>
+            <div class="donate-title">Поддержать автора</div>
+            <div class="donate-instruction">Спасибо, что играешь! ❤️<br>Переведи любую сумму:</div>
+            <div class="card-details">
+                <div class="card-row">
+                    <div class="card-label">💳 Карта</div>
+                    <div class="card-value">
+                        <span id="cardNumber">2200 3961 1844 6463</span>
+                        <button class="copy-btn" data-copy="cardNumber">Копировать</button>
+                    </div>
+                </div>
+                <div class="card-row">
+                    <div class="card-label">👤 Получатель</div>
+                    <div class="card-value"><span id="cardName">Эмиль Х.</span></div>
+                </div>
+                <div class="card-row">
+                    <div class="card-label">🏦 Банк</div>
+                    <div class="card-value"><span id="cardBank">Тинькофф</span></div>
+                </div>
+            </div>
+            <div class="donate-note">
+                <b>✍️ Важно:</b> в поле <b>«Комментарий»</b> к переводу можешь написать свои пожелания — я увижу их при проверке и учту!<br><br>
+                <b>🙏</b> Каждый донат — это поддержка и мотивация делать игру лучше!
+            </div>
+            <button class="donate-ok-btn" id="donateOk">Понятно, спасибо! 🙌</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalContent"></div>
+    </div>
+
+    <div class="ach-toast" id="achToast"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            let isGamePaused = false, audioMuted = false;
+
+            let audioCtx = null, popBuffer = null, activeOscillators = [];
+            function pauseAllSounds() { audioMuted = true; if (audioCtx && audioCtx.state === 'running') { try { audioCtx.suspend(); } catch(e) {} } activeOscillators.forEach(osc => { try { osc.stop(); } catch (e) {} }); activeOscillators = []; }
+            function resumeAudio() { audioMuted = false; if (audioCtx && audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch(e) {} } }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) pauseAllSounds();
+                else resumeAudio();
+            });
+
+            let score = 0, totalClicks = 0, totalEarned = 0, views = 0, totalViews = 0;
+            let debtPaid = 0;
+            let debtTotal = 2000000;
+            let loanAccepted = false;
+            let vaharShown = false;
+            let lastSideJobTime = 0;
+            const SIDE_JOB_COOLDOWN = 30000;
+            const SIDE_JOB_REWARD = 5000;
+            let lastAiAskTime = 0;
+            const AI_COOLDOWN = 5000;
+            let aiRecommendStockId = null;
+            let aiRecommendUntil = 0;
+            let liveActive = false, liveEndTime = 0;
+            const LIVE_DURATION = 5 * 60 * 1000;
+            let liveCooldownEnd = 0;
+            const LIVE_COOLDOWN = 3 * 60 * 1000;
+            let totalLives = 0, totalSideJobs = 0, totalPurchases = 0, totalStocksBought = 0, totalStocksSold = 0;
+            let totalAiAsks = 0;
+            let marketMultiplier = 1.0;
+
+            let lastNewsTime = 0;
+            const NEWS_COOLDOWN = 20000;
+            let totalNewsSeen = 0;
+            let lastTaxCheckTime = 0;
+            const TAX_COOLDOWN = 60000;
+            let taxEvasionLevel = 0;
+            let lieDetectorSuccess = 0;
+            let lieDetectorFail = 0;
+            let detectedCorruption = 0;
+
+            let nextTaxThreshold = 5000000;
+            const TAX_GROWTH_MULT = 5;
+
+            const CHEAT_CODES = {
+                'жувамбур': { reward: 5000000, message: '🎁 ЧИТ-АКТИВИРОВАН! +5 000 000 ₽' },
+                'лезги': { reward: 1000000, message: '🔥 БОНУС! +1 000 000 ₽' },
+                'инвестор': { reward: 2500000, message: '💎 ИНВЕСТОР! +2 500 000 ₽' },
+                'вахар': { reward: 3000000, message: '🎉 ВАХАР! +3 000 000 ₽' }
+            };
+            let usedCheatCodes = [];
+
+            let businessEarnings = {};
+            let stockProfit = {};
+            let stockSpent = {};
+            let totalBusinessEarned = 0;
+            let totalStockProfit = 0;
+            let businessKassa = {};
+
+            const businessesData = [
+                { id: 'tire',      name: 'Шиномонтажка',  emoji: '🛞', baseCost: 50000,     costMult: 1.7, income: 800,     desc: '+800 ₽/сек',   meme: 'Резину обуем, брат!' },
+                { id: 'shawarma',  name: 'Шаурмичная',    emoji: '🌯', baseCost: 200000,    costMult: 1.8, income: 2500,    desc: '+2.5K ₽/сек',  meme: 'С собой или тут?' },
+                { id: 'chaikhana', name: 'Чайхана',       emoji: '🍵', baseCost: 800000,    costMult: 1.9, income: 8000,    desc: '+8K ₽/сек',    meme: 'Сядь, чай попей...' },
+                { id: 'carwash',   name: 'Автомойка',     emoji: '🚿', baseCost: 2500000,   costMult: 2.0, income: 22000,   desc: '+22K ₽/сек',   meme: 'Помыть или как?' },
+                { id: 'cafe',      name: 'Кофейня',       emoji: '☕', baseCost: 8000000,   costMult: 2.1, income: 60000,   desc: '+60K ₽/сек',   meme: 'Раф с корицей?' },
+                { id: 'karaoke',   name: 'Караоке-бар',   emoji: '🎤', baseCost: 25000000,  costMult: 2.2, income: 180000,  desc: '+180K ₽/сек',  meme: 'Горько! 🎶' },
+                { id: 'hotel',     name: 'Горный отель',  emoji: '🏨', baseCost: 80000000,  costMult: 2.3, income: 500000,  desc: '+500K ₽/сек',  meme: 'Вид на Эльбрус!' },
+                { id: 'zavod',     name: 'Завод',         emoji: '🏭', baseCost: 250000000, costMult: 2.4, income: 1500000, desc: '+1.5M ₽/сек',  meme: 'Работай, брат!' }
+            ];
+            let businesses = {};
+
+            const stocksData = [
+                { id: 'lezgi_gazet',  name: 'ЛЕЗГИ ГАЗЕТ', emoji: '📰', basePrice: 500,   volatility: 0.05, trend: 0.001 },
+                { id: 'flnka',        name: 'ФЛНКА',       emoji: '🏛️', basePrice: 1500,  volatility: 0.04, trend: 0.0008 },
+                { id: 'kavkaz_bank',  name: 'КАВКАЗ БАНК', emoji: '🏦', basePrice: 5000,  volatility: 0.03, trend: 0.0006 },
+                { id: 'derbent',      name: 'ДЕРБЕНТ',     emoji: '🕌', basePrice: 2500,  volatility: 0.06, trend: 0.0012 },
+                { id: 'aul_telecom',  name: 'АУЛ-ТЕЛЕКОМ', emoji: '📡', basePrice: 8000,  volatility: 0.07, trend: 0.0015 },
+                { id: 'gorny_tur',    name: 'ГОРНЫЙ ТУР',  emoji: '🏔️', basePrice: 15000, volatility: 0.08, trend: 0.002 }
+            ];
+            let stocks = {};
+            stocksData.forEach(s => {
+                stocks[s.id] = { price: s.basePrice, prevPrice: s.basePrice, owned: 0, history: [s.basePrice] };
+                businessEarnings[s.id] = 0;
+                stockProfit[s.id] = 0;
+                stockSpent[s.id] = 0;
+            });
+            businessesData.forEach(b => { businessEarnings[b.id] = 0; businessKassa[b.id] = 0; });
+
+            const worldNewsData = [
+                { icon: '🛢️', title: 'НЕФТЬ', text: 'Цены на нефть <b>выросли на 8%</b> из-за напряжённости на Ближнем Востоке.', risk: 'low', effect: 0.05 },
+                { icon: '🥇', title: 'ЗОЛОТО', text: 'Золото бьёт рекорды — <b>+12%</b> за неделю. Инвесторы бегут в защитные активы.', risk: 'low', effect: 0.08 },
+                { icon: '💻', title: 'IT-СЕКТОР', text: 'Акции IT-гигантов <b>рухнули на 15%</b>. Новый антимонопольный иск.', risk: 'high', effect: -0.15 },
+                { icon: '🏦', title: 'ФРС США', text: 'ФРС <b>подняла ставку на 0.5%</b>. Рынки в панике.', risk: 'medium', effect: -0.08 },
+                { icon: '🇨🇳', title: 'КИТАЙ', text: 'Китай <b>снизил пошлины</b> на импорт. Мировая торговля оживает.', risk: 'low', effect: 0.06 },
+                { icon: '🪙', title: 'КРИПТА', text: 'Биткоин <b>упал на 20%</b> за сутки. Крупный обменник закрылся.', risk: 'high', effect: -0.2 },
+                { icon: '⚡', title: 'ЭНЕРГЕТИКА', text: 'Цены на газ <b>взлетели на 25%</b>. Европа готовится к зиме.', risk: 'high', effect: 0.25 },
+                { icon: '🌾', title: 'ЗЕРНО', text: 'Урожай пшеницы <b>выше прогноза на 10%</b>. Цены падают.', risk: 'low', effect: -0.05 },
+                { icon: '🏭', title: 'ПРОМЫШЛЕННОСТЬ', text: 'Крупный завод <b>закрылся на ремонт</b>. Дефицит стали.', risk: 'medium', effect: 0.1 },
+                { icon: '🚢', title: 'ЛОГИСТИКА', text: 'Порт встал на забастовку. <b>Поставки задерживаются</b>.', risk: 'medium', effect: 0.07 },
+                { icon: '🏥', title: 'ФАРМА', text: 'Прорыв в медицине! Акции фармкомпаний <b>+18%</b>.', risk: 'low', effect: 0.18 },
+                { icon: '📱', title: 'ТЕХНОЛОГИИ', text: 'Новый смартфон побил рекорды продаж. Акции <b>+9%</b>.', risk: 'low', effect: 0.09 },
+                { icon: '⚔️', title: 'ГЕОПОЛИТИКА', text: 'Конфликт в регионе. <b>Рынки лихорадит</b>.', risk: 'high', effect: -0.12 },
+                { icon: '🌍', title: 'КЛИМАТ', text: 'Экстремальная погода бьёт по сельскому хозяйству. Цены растут.', risk: 'medium', effect: 0.06 },
+                { icon: '💊', title: 'МЕДИЦИНА', text: 'Скандал с вакциной. Акции <b>обвалились на 22%</b>.', risk: 'high', effect: -0.22 }
+            ];
+
+            const achievements = [
+                { id: 'first',    icon: '👶', name: 'Первая сделка',      desc: 'Сделать 1 клик',              check: () => totalClicks >= 1,        unlocked: false },
+                { id: 'click100', icon: '👆', name: 'Активный трейдер',    desc: 'Сделать 100 кликов',          check: () => totalClicks >= 100,      unlocked: false },
+                { id: 'click1k',  icon: '🔥', name: 'Биржевой волк',      desc: 'Сделать 1 000 кликов',        check: () => totalClicks >= 1000,     unlocked: false },
+                { id: 'earn100k', icon: '💰', name: 'Первый лям',         desc: 'Заработать 100 000 ₽',        check: () => totalEarned >= 100000,   unlocked: false },
+                { id: 'earn1m',   icon: '💎', name: 'Миллионер',          desc: 'Заработать 1 000 000 ₽',      check: () => totalEarned >= 1000000,  unlocked: false },
+                { id: 'earn5m',   icon: '💰', name: 'Пять лямов',         desc: 'Заработать 5 000 000 ₽',      check: () => totalEarned >= 5000000,  unlocked: false },
+                { id: 'earn10m',  icon: '👑', name: 'Горский Рокфеллер',  desc: 'Заработать 10 000 000 ₽',     check: () => totalEarned >= 10000000, unlocked: false },
+                { id: 'earn100m', icon: '🏆', name: 'Империя',            desc: 'Заработать 100 000 000 ₽',    check: () => totalEarned >= 100000000, unlocked: false },
+                { id: 'earn1t',   icon: '🌌', name: 'Триллионер',         desc: 'Заработать 1 000 000 000 000 ₽', check: () => totalEarned >= 1e12,  unlocked: false },
+                { id: 'business', icon: '🏪', name: 'Хозяин бизнеса',     desc: 'Купить первый бизнес',        check: () => Object.values(businesses).some(v => v > 0), unlocked: false },
+                { id: 'allBiz',   icon: '🏢', name: 'Империя бизнеса',    desc: 'Купить все бизнесы',          check: () => businessesData.every(b => (businesses[b.id] || 0) > 0), unlocked: false },
+                { id: 'stockB',   icon: '📈', name: 'Трейдер',            desc: 'Купить акции',                check: () => totalStocksBought >= 1,  unlocked: false },
+                { id: 'stockS',   icon: '📉', name: 'Продал',             desc: 'Продать акции',               check: () => totalStocksSold >= 1,    unlocked: false },
+                { id: 'sidejob',  icon: '🤫', name: 'Подработка',         desc: 'Подработать',                 check: () => totalSideJobs >= 1,      unlocked: false },
+                { id: 'sidejob10',icon: '💼', name: 'Шабашник',           desc: 'Подработать 10 раз',          check: () => totalSideJobs >= 10,     unlocked: false },
+                { id: 'ai',       icon: '🤖', name: 'Спросил ИИ',         desc: 'Спросить совет у ИИ',         check: () => totalAiAsks >= 1,        unlocked: false },
+                { id: 'cheat',    icon: '🎁', name: 'Читер',              desc: 'Ввести чит-код',              check: () => usedCheatCodes.length >= 1, unlocked: false },
+                { id: 'debt1',    icon: '💸', name: 'Первая выплата',     desc: 'Начать выплачивать кредит',   check: () => debtPaid > 0,            unlocked: false },
+                { id: 'debt50',   icon: '💵', name: 'Половина долга',     desc: 'Выплатить 50% долга',         check: () => debtPaid >= 1000000,     unlocked: false },
+                { id: 'debt100',  icon: '🕊️', name: 'Свобода от долга',   desc: 'Выплатить весь кредит',       check: () => debtPaid >= debtTotal,   unlocked: false },
+                { id: 'taxWinner',icon: '🏛️', name: 'Чист перед законом', desc: 'Пройти проверку налоговой',   check: () => lieDetectorSuccess >= 1, unlocked: false },
+                { id: 'taxMaster',icon: '🧠', name: 'Мастер детектора',    desc: 'Пройти 5 проверок',           check: () => lieDetectorSuccess >= 5, unlocked: false },
+                { id: 'newsHunter',icon: '📰', name: 'В курсе дел',        desc: 'Получить 10 новостей',        check: () => totalNewsSeen >= 10,     unlocked: false },
+                { id: 'reels',    icon: '🎬', name: 'Забери меня и прикури Мальборо', desc: 'Купить Reels-актив', check: () => (upgrades.reels || 0) > 0, unlocked: false, secret: true },
+                { id: 'live',     icon: '🐂', name: 'Бычий рынок',        desc: 'Запустить бычий рынок',       check: () => totalLives >= 1, unlocked: false },
+                { id: 'bestInvestor', icon: '🧠', name: 'Действуй как лучший инвестор...', desc: 'Секретное достижение', check: () => totalAiAsks >= 5 && totalStocksSold >= 3, unlocked: false, secret: true },
+                { id: 'pablo',    icon: '👑', name: 'Я стха, ву че за Пабло Эскобар!', desc: 'Провалить проверку налоговой', check: () => lieDetectorFail >= 1, unlocked: false, secret: true },
+                { id: 'billion',  icon: '💎', name: 'Я лам... остановись ле!', desc: 'Заработать 1 000 000 000 ₽', check: () => totalEarned >= 1000000000, unlocked: false, secret: true }
+            ];
+
+            const jsfxr = (function() {
+                const POP_PRESET = { oldParams: true, wave_type: 1, p_env_attack: -0.0026839985472395956, p_env_sustain: 0.29213541032679524, p_env_punch: 0.43459732951284297, p_env_decay: 0.6667921463268245, p_base_freq: 0.2782479636198421, p_freq_limit: 0, p_freq_ramp: 0.0022573956750177155, p_freq_dramp: -0.035771645042944014, p_vib_strength: 0.018617265401923905, p_vib_speed: 0.8201708966447658, p_arp_mod: -0.9957931800520585, p_arp_speed: 0.9775143082611191, p_duty: 0.47312217860626626, p_duty_ramp: -0.45549629925647567, p_repeat_speed: 0.6667902853947323, p_pha_offset: -0.32900949694411763, p_pha_ramp: 0.11545717508543583, p_lpf_freq: 0.27983009989438024, p_lpf_ramp: 0.20150434119688743, p_lpf_resonance: 0.42329553166183076, p_hpf_freq: 0.29846714470095076, p_hpf_ramp: -0.0018615456839743939, sound_vol: 0.25, sample_rate: 44100, sample_size: 16 };
+                function generate(p) {
+                    const sampleRate = p.sample_rate || 44100;
+                    const soundVol = p.sound_vol !== undefined ? p.sound_vol : 0.5;
+                    const attackTime = p.p_env_attack, sustainTime = p.p_env_sustain, decayTime = p.p_env_decay, punch = p.p_env_punch;
+                    const startFreq = p.p_base_freq !== undefined ? p.p_base_freq : 0.3;
+                    const minFreq = p.p_freq_limit !== undefined ? p.p_freq_limit : 0;
+                    const freqRamp = p.p_freq_ramp !== undefined ? p.p_freq_ramp : 0;
+                    const freqDramp = p.p_freq_dramp !== undefined ? p.p_freq_dramp : 0;
+                    const vibStrength = p.p_vib_strength !== undefined ? p.p_vib_strength : 0;
+                    const vibSpeed = p.p_vib_speed !== undefined ? p.p_vib_speed : 0;
+                    const arpMod = p.p_arp_mod !== undefined ? p.p_arp_mod : 0;
+                    const arpSpeed = p.p_arp_speed !== undefined ? p.p_arp_speed : 0;
+                    const duty = p.p_duty !== undefined ? p.p_duty : 0.5;
+                    const lpfFreq = p.p_lpf_freq !== undefined ? p.p_lpf_freq : 1;
+                    const hpfFreq = p.p_hpf_freq !== undefined ? p.p_hpf_freq : 0;
+                    const waveType = p.wave_type || 0;
+                    function getFreq(freq) { return freq > 0 ? 8 * 44100 * (freq * freq + 0.001) : 0; }
+                    function getEnvelopeTime(t) { return t * t * 100000; }
+                    const envAttack = getEnvelopeTime(attackTime), envSustain = getEnvelopeTime(sustainTime), envDecay = getEnvelopeTime(decayTime);
+                    const baseFreq = getFreq(startFreq), freqLimit = getFreq(minFreq);
+                    const freqRampVal = freqRamp * 44100, freqDrampVal = freqDramp * 44100;
+                    const lpfFreqVal = getFreq(lpfFreq), hpfFreqVal = getFreq(hpfFreq);
+                    let envLength = envAttack + envSustain + envDecay;
+                    if (envLength < 0) envLength = 0;
+                    const numSamples = Math.floor(envLength);
+                    const buffer = new Float32Array(numSamples);
+                    let phase = 0, lpfPrev = 0, hpfPrev = 0;
+                    for (let i = 0; i < numSamples; i++) {
+                        const t = i / sampleRate;
+                        let env = 0;
+                        if (t < envAttack / sampleRate) env = t / (envAttack / sampleRate);
+                        else if (t < (envAttack + envSustain) / sampleRate) env = 1;
+                        else env = 1 - (t - (envAttack + envSustain) / sampleRate) / (envDecay / sampleRate);
+                        if (punch > 0) { const punchEnv = Math.pow(1 - Math.min(1, t / (envAttack / sampleRate + 0.001)), 2); env += punch * punchEnv * 2; }
+                        env = Math.max(0, Math.min(1, env));
+                        let freq = baseFreq + freqRampVal * t + freqDrampVal * t * t;
+                        if (freqLimit > 0 && freq < freqLimit) freq = freqLimit;
+                        if (freq < 0) freq = 0;
+                        if (vibStrength > 0) freq *= 1 + Math.sin(t * vibSpeed * 2 * Math.PI * 10) * vibStrength * 0.5;
+                        let sample = 0;
+                        if (freq > 0) {
+                            const dt = freq / sampleRate; phase += dt; if (phase > 1) phase -= 1;
+                            switch (waveType) {
+                                case 0: sample = phase < duty ? 1 : -1; break;
+                                case 1: sample = phase * 2 - 1; break;
+                                case 2: sample = Math.sin(phase * Math.PI * 2); break;
+                                case 3: sample = phase < 0.5 ? (phase * 4 - 1) : (3 - phase * 4); break;
+                                case 4: sample = Math.random() * 2 - 1; break;
+                                default: sample = phase < duty ? 1 : -1;
+                            }
+                        }
+                        if (lpfFreqVal > 0 && lpfFreqVal < sampleRate) { const alpha = Math.min(1, (2 * Math.PI * lpfFreqVal) / sampleRate); lpfPrev += alpha * (sample - lpfPrev); sample = lpfPrev; }
+                        if (hpfFreqVal > 0) { const alpha = Math.min(1, (2 * Math.PI * hpfFreqVal) / sampleRate); hpfPrev += alpha * (sample - hpfPrev); sample = sample - hpfPrev; }
+                        buffer[i] = sample * env * soundVol;
+                    }
+                    let max = 0; for (let i = 0; i < buffer.length; i++) if (Math.abs(buffer[i]) > max) max = Math.abs(buffer[i]);
+                    if (max > 0) for (let i = 0; i < buffer.length; i++) buffer[i] /= max;
+                    return buffer;
+                }
+                return { generate, POP_PRESET };
+            })();
+
+            function initAudio() {
+                if (audioMuted) return;
+                if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; } }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                if (!popBuffer && audioCtx) { const samples = jsfxr.generate(jsfxr.POP_PRESET); const buffer = audioCtx.createBuffer(1, samples.length, 44100); buffer.copyToChannel(samples, 0); popBuffer = buffer; }
+            }
+            function playPopSound() { if (audioMuted) return; try { initAudio(); if (!popBuffer) return; const source = audioCtx.createBufferSource(); source.buffer = popBuffer; source.playbackRate.value = 0.95 + Math.random() * 0.1; const gain = audioCtx.createGain(); gain.gain.value = 0.85; source.connect(gain); gain.connect(audioCtx.destination); source.start(0); } catch (e) {} }
+            function playToneSequence(freqs, type, vol, spacing) {
+                if (audioMuted) return;
+                try {
+                    initAudio(); if (!audioCtx) return;
+                    const now = audioCtx.currentTime;
+                    freqs.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                        osc.type = type || 'sine'; osc.frequency.value = freq;
+                        const startTime = now + i * spacing;
+                        gain.gain.setValueAtTime(0, startTime);
+                        gain.gain.linearRampToValueAtTime(vol || 0.12, startTime + 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.start(startTime); osc.stop(startTime + 0.35);
+                        activeOscillators.push(osc);
+                        osc.onended = () => { const idx = activeOscillators.indexOf(osc); if (idx > -1) activeOscillators.splice(idx, 1); };
+                    });
+                } catch (e) {}
+            }
+            function playBuySound() { playToneSequence([523, 659, 784, 1047], 'sine', 0.1, 0.07); }
+            function playSellSound() { playToneSequence([784, 659, 523, 392], 'sine', 0.1, 0.07); }
+            function playCollectSound() { playToneSequence([659, 784, 988, 1319], 'sine', 0.15, 0.05); }
+            function playDebtPaidSound() { playToneSequence([523, 659, 784, 1047, 1319, 1568, 2093], 'triangle', 0.15, 0.1); }
+            function playAchievementSound() { playToneSequence([784, 988, 1175, 1568], 'sine', 0.12, 0.06); }
+            function playManagerSound() { playToneSequence([392, 523, 659, 784, 1047], 'sine', 0.1, 0.06); }
+            function playLiveSound() { playToneSequence([523, 659, 784, 1047, 784, 1047, 1319], 'triangle', 0.12, 0.1); }
+            function playCoinSound() { playToneSequence([1568, 2093, 1760, 2349, 1976, 2637], 'sine', 0.06, 0.04); }
+            function playSideJobSound() { playToneSequence([262, 330, 392, 523], 'triangle', 0.15, 0.05); }
+            function playAiSound() { playToneSequence([440, 554, 659, 880, 1108], 'sine', 0.12, 0.05); }
+            function playLoanSound() { playToneSequence([392, 523, 659, 784, 1047, 880, 659], 'triangle', 0.12, 0.08); }
+            function playTaxSound() { playToneSequence([262, 220, 196, 165], 'square', 0.15, 0.12); }
+            function playVaharSound() { playToneSequence([523, 659, 784, 1047, 1319], 'triangle', 0.15, 0.1); }
+            function playCheatSound() { playToneSequence([880, 1108, 1319, 1760, 2093], 'sine', 0.15, 0.08); }
+            function playPabloSound() { playToneSequence([196, 233, 262, 233, 196], 'sawtooth', 0.15, 0.15); }
+
+            const upgradesData = [
+                { id: 'stock_type', name: 'Акции ЛЕЗГ', emoji: '📈', baseCost: 10000,   costMult: 1.5, income: 100,   desc: '+100 ₽/сек',  type: 'stock-type' },
+                { id: 'bond_type',  name: 'Облигации',   emoji: '📜', baseCost: 50000,   costMult: 1.6, income: 500,   desc: '+500 ₽/сек',  type: 'bond-type' },
+                { id: 'realty',     name: 'Недвижимость',emoji: '🏔️', baseCost: 800000,  costMult: 1.8, income: 5000,  desc: '+5K ₽/сек',   type: 'realty-type' },
+                { id: 'business_t', name: 'Бизнес-фонд', emoji: '🏘️', baseCost: 3000000, costMult: 1.9, income: 20000, desc: '+20K ₽/сек',  type: 'business-type' },
+                { id: 'reels',      name: 'Медиа-актив', emoji: '🎬', baseCost: 8000000, costMult: 2.0, income: 0,     desc: '+1 📊/сек',   type: 'venture-type', viewsPerSec: 1 },
+                { id: 'live',       name: 'Бычий рынок', emoji: '🐂', baseCost: 5000000, costMult: 1.0, income: 0,     desc: '×2 на 5 мин', type: 'venture-type', live: true, oneTime: true }
+            ];
+            let upgrades = {};
+
+            const managersData = [
+                { id: 'mgr1', name: 'Брокер',      emoji: '🧑‍💼', costViews: 10,    level: 1 },
+                { id: 'mgr2', name: 'Аналитик',    emoji: '👨‍💼', costViews: 50,    level: 2 },
+                { id: 'mgr3', name: 'Управляющий', emoji: '🧔',   costViews: 200,   level: 3 },
+                { id: 'mgr4', name: 'Меценат',     emoji: '🤵',   costViews: 800,   level: 5 },
+                { id: 'mgr5', name: 'Горский босс', emoji: '👑',  costViews: 3000,  level: 10 }
+            ];
+            let managers = {};
+
+            function getDebtRemaining() { return Math.max(0, debtTotal - debtPaid); }
+            function getDebtPercent() { return Math.min(100, (debtPaid / debtTotal) * 100); }
+            function getDebtPenalty() { if (debtPaid >= debtTotal) return 1; const remaining = getDebtRemaining() / debtTotal; return 1 - remaining * 0.3; }
+            function getManagerClickBonus() { let total = 0; managersData.forEach(m => { if (managers[m.id]) total += m.level; }); return total * 100; }
+            function getClickValue() { return Math.ceil(100 * getDebtPenalty()) + getManagerClickBonus(); }
+            function getUpgradesIncome() { let total = 0; upgradesData.forEach(up => { if (up.viewsPerSec || up.live) return; total += (upgrades[up.id] || 0) * up.income; }); return total; }
+            function getBusinessesIncome() { let total = 0; businessesData.forEach(b => { total += (businesses[b.id] || 0) * b.income; }); return total; }
+            function getIncomePerSecond() { return (getUpgradesIncome() + getBusinessesIncome()) * getDebtPenalty() * marketMultiplier; }
+            function getViewsPerSecond() { let total = 0; upgradesData.forEach(up => { if (up.viewsPerSec) total += (upgrades[up.id] || 0) * up.viewsPerSec; }); return total; }
+
+            function updateStockPrices() {
+                stocksData.forEach(s => {
+                    const stock = stocks[s.id];
+                    const change = (Math.random() - 0.5) * 2 * s.volatility;
+                    stock.prevPrice = stock.price;
+                    stock.price = Math.max(s.basePrice * 0.3, stock.price * (1 + change + s.trend));
+                    stock.history.push(stock.price);
+                    if (stock.history.length > 20) stock.history.shift();
+                });
+                renderStocks();
+            }
+
+            function getStockChangePercent(s) {
+                const stock = stocks[s.id];
+                if (stock.prevPrice === 0) return 0;
+                return ((stock.price - stock.prevPrice) / stock.prevPrice) * 100;
+            }
+
+            function renderStocks() {
+                const stocksContainer = document.getElementById('stocksContainer');
+                if (!stocksContainer) return;
+                stocksContainer.innerHTML = '';
+                const aiActive = aiRecommendStockId && Date.now() < aiRecommendUntil;
+                stocksData.forEach(s => {
+                    const stock = stocks[s.id];
+                    const change = getStockChangePercent(s);
+                    const changeClass = change >= 0 ? 'up' : 'down';
+                    const changeSign = change >= 0 ? '+' : '';
+                    const canBuy = score >= stock.price;
+                    const canSell = stock.owned > 0;
+                    const profit = stockProfit[s.id] || 0;
+                    const profitClass = profit >= 0 ? 'up' : 'down';
+                    const profitSign = profit >= 0 ? '+' : '';
+                    const isAiRecommend = aiActive && aiRecommendStockId === s.id;
+                    const row = document.createElement('div');
+                    row.className = `stock-row ${changeClass} ${isAiRecommend ? 'ai-recommend' : ''}`;
+                    row.dataset.stockId = s.id;
+                    row.innerHTML = `
+                        <div class="stock-emoji">${s.emoji}</div>
+                        <div class="stock-info">
+                            <div class="stock-name">${s.name}</div>
+                            <div class="stock-price">${formatMoney(stock.price)} ₽</div>
+                            <div class="stock-change ${changeClass}">${changeSign}${change.toFixed(2)}%</div>
+                            ${profit !== 0 ? `<div class="stock-profit ${profitClass}">${profitSign}${formatMoney(profit)} ₽ прибыль</div>` : ''}
+                        </div>
+                        <div class="stock-owned">${stock.owned} шт</div>
+                        <div class="stock-actions">
+                            <button class="stock-btn buy ${canBuy ? '' : 'disabled'}" data-action="buy" data-id="${s.id}">📈</button>
+                            <button class="stock-btn sell ${canSell ? '' : 'disabled'}" data-action="sell" data-id="${s.id}">📉</button>
+                        </div>
+                    `;
+                    stocksContainer.appendChild(row);
+                });
+            }
+
+            function askAI() {
+                const now = Date.now();
+                if (now - lastAiAskTime < AI_COOLDOWN) return false;
+                lastAiAskTime = now;
+                totalAiAsks++;
+                const scored = stocksData.map(s => {
+                    const stock = stocks[s.id];
+                    let score = 0;
+                    const deviation = (s.basePrice - stock.price) / s.basePrice;
+                    score += deviation * 100;
+                    const change = getStockChangePercent(s);
+                    score -= change * 2;
+                    if (stock.history.length > 3) {
+                        const avg = stock.history.reduce((a, b) => a + b, 0) / stock.history.length;
+                        const avgDiff = (avg - stock.price) / avg;
+                        score += avgDiff * 80;
+                    }
+                    score += s.volatility * 50;
+                    score += s.trend * 10000;
+                    score -= stock.owned * 5;
+                    if (score >= stock.price) score += 20;
+                    return { s, stock, score };
+                });
+                scored.sort((a, b) => b.score - a.score);
+                const best = scored[0];
+                aiRecommendStockId = best.s.id;
+                aiRecommendUntil = now + 5000;
+                renderStocks();
+                playAiSound();
+                const banner = document.createElement('div');
+                banner.innerHTML = `🤖 РЕКОМЕНДУЮ: <b>${best.s.emoji} ${best.s.name}</b>`;
+                banner.style.cssText = `position:fixed;top:25%;left:50%;transform:translate(-50%,-50%);font-size:1.4rem;font-weight:900;color:#00d4ff;text-shadow:0 0 15px #00d4ff, 0 0 30px #7c3aed, 0 4px 12px black;pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 2s ease-out forwards;background:rgba(0,20,40,0.9);padding:12px 20px;border-radius:20px;border:2px solid #00d4ff;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 2000);
+                checkAchievements(); saveGame();
+                return true;
+            }
+
+            function showWorldNews() {
+                const now = Date.now();
+                if (now - lastNewsTime < NEWS_COOLDOWN) return;
+                lastNewsTime = now;
+                totalNewsSeen++;
+                const news = worldNewsData[Math.floor(Math.random() * worldNewsData.length)];
+                const toast = document.getElementById('newsToast');
+                document.getElementById('newsIcon').textContent = news.icon;
+                document.getElementById('newsTitle').textContent = news.title;
+                document.getElementById('newsText').innerHTML = news.text;
+                const riskEl = document.getElementById('newsRisk');
+                riskEl.className = 'news-toast-risk ' + news.risk;
+                const riskLabels = {
+                    low: '🟢 НИЗКИЙ РИСК • ИИ советует покупать',
+                    medium: '🟡 СРЕДНИЙ РИСК • ИИ советует подождать',
+                    high: '🔴 ВЫСОКИЙ РИСК • ИИ советует продавать'
+                };
+                riskEl.textContent = riskLabels[news.risk];
+                toast.classList.add('show');
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => toast.classList.remove('show'), 8000);
+                marketMultiplier = Math.max(0.5, Math.min(1.5, marketMultiplier + news.effect));
+                playToneSequence([659, 880, 1047], 'sine', 0.08, 0.06);
+                checkAchievements();
+            }
+
+            function checkTaxMilestone() {
+                if (totalEarned >= 1000000000 && !window._billionShown) {
+                    window._billionShown = true;
+                    setTimeout(() => {
+                        const banner = document.createElement('div');
+                        banner.innerHTML = `💎 Я ЛАМ... ОСТАНОВИСЬ ЛЕ!`;
+                        banner.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.3);font-size:1.6rem;font-weight:900;color:#7fd4ff;text-shadow:0 0 30px #7fd4ff, 0 0 60px #00d4ff, 0 4px 12px black;pointer-events:none;z-index:13000;white-space:nowrap;animation:pabloPop 3.5s ease-out forwards;background:linear-gradient(135deg, rgba(0,40,80,0.95), rgba(40,0,80,0.95));padding:22px 32px;border-radius:24px;border:4px solid #7fd4ff;text-align:center;max-width:90%;`;
+                        document.body.appendChild(banner);
+                        setTimeout(() => banner.remove(), 3500);
+                        coinRain(150);
+                        playToneSequence([523, 659, 784, 1047, 1319, 1568, 2093, 2637], 'triangle', 0.15, 0.1);
+                        for (let i = 0; i < 40; i++) {
+                            setTimeout(() => {
+                                const el = document.createElement('div');
+                                el.textContent = ['💎','💰','👑','🏆','✨','🌟','💵'][Math.floor(Math.random()*7)];
+                                el.style.cssText = `position:fixed;left:${window.innerWidth/2 + (Math.random()-0.5)*350}px;top:${window.innerHeight/2 + (Math.random()-0.5)*350}px;font-size:${Math.random()*35+25}px;pointer-events:none;z-index:12999;animation:floatUp 3s ease-out forwards;`;
+                                document.body.appendChild(el);
+                                setTimeout(() => el.remove(), 3000);
+                            }, i * 50);
+                        }
+                    }, 1000);
+                }
+                if (totalEarned >= nextTaxThreshold) {
+                    setTimeout(() => { showTaxInspection(true); }, 2500);
+                    nextTaxThreshold *= TAX_GROWTH_MULT;
+                    saveGame();
+                }
+            }
+
+            function checkTaxEvasion() {
+                const now = Date.now();
+                if (now - lastTaxCheckTime < TAX_COOLDOWN) return;
+                lastTaxCheckTime = now;
+                const suspicionChance = Math.min(0.7, (score / 10000000) + taxEvasionLevel * 0.15);
+                if (Math.random() > suspicionChance) return;
+                showTaxInspection(false);
+            }
+
+            function showTaxInspection(isMilestone) {
+                playTaxSound();
+                const detected = Math.floor(score * 0.05);
+                const isCorruption = Math.random() < 0.4;
+                let html = `
+                    <div class="tax-emoji">🏛️</div>
+                    <div class="tax-title">${isMilestone ? 'ПЛАНОВАЯ ПРОВЕРКА' : 'НАЛОГОВАЯ ИНСПЕКЦИЯ'}</div>
+                    <div class="tax-text">
+                        ${isMilestone ? '<b>Поздравляем с доходом!</b> Мы пришли проверить ваши <b>' + formatMoney(nextTaxThreshold / TAX_GROWTH_MULT) + ' ₽</b>.<br><br>' : '<b>Здравствуйте!</b> Мы получили сигнал о возможной <b>коррупции</b> и <b>нелегальных доходах</b>.<br><br>'}
+                        Капитал: <b>${formatMoney(score)} ₽</b><br>
+                        Уровень подозрений: <b>${taxEvasionLevel}/3</b><br>
+                        Следующий порог: <b>${formatMoney(nextTaxThreshold)} ₽</b>
+                `;
+                if (isCorruption) {
+                    html += `<br><br>Найдены <b>подозрительные транзакции</b>. Требуется <span class="big-red">${formatMoney(detected)} ₽</span> штрафа.`;
+                } else {
+                    html += `<br><br>Если вы <b>чисты</b> — пройдите детектор лжи.`;
+                }
+                html += `
+                    </div>
+                    <div class="detector-question" id="detectorQuestion">
+                        <div class="detector-question-text">🧠 <b>ДЕТЕКТОР ЛЖИ</b><br>Ответь правильно за 10 секунд:</div>
+                        <div class="detector-math" id="detectorMath">2 + 3 = ?</div>
+                        <div class="detector-answers" id="detectorAnswers">
+                            <div class="detector-answer">?</div>
+                            <div class="detector-answer">?</div>
+                            <div class="detector-answer">?</div>
+                            <div class="detector-answer">?</div>
+                        </div>
+                        <div class="detector-timer" id="detectorTimer">⏳ 10с</div>
+                    </div>
+                `;
+                document.getElementById('taxModalContent').innerHTML = html;
+                document.getElementById('taxOverlay').classList.add('show');
+                if (isCorruption) {
+                    setTimeout(() => {
+                        score = Math.max(0, score - detected);
+                        detectedCorruption++;
+                        taxEvasionLevel = Math.min(3, taxEvasionLevel + 1);
+                        playToneSequence([165, 130, 98], 'sawtooth', 0.15, 0.15);
+                        const banner = document.createElement('div');
+                        banner.textContent = `🏛️ ШТРАФ ${formatMoney(detected)} ₽`;
+                        banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;color:#ff5252;text-shadow:0 0 30px #ff5252, 0 4px 12px black;pointer-events:none;z-index:12000;white-space:nowrap;animation:adBannerPop 2s ease-out forwards;background:rgba(40,0,0,0.9);padding:16px 24px;border-radius:20px;border:3px solid #c62828;`;
+                        document.body.appendChild(banner);
+                        setTimeout(() => banner.remove(), 2000);
+                        // ПАБЛО ЭСКОБАР
+                        setTimeout(() => {
+                            const pabloBanner = document.createElement('div');
+                            pabloBanner.innerHTML = `👑 Я СТХА, ВУ ЧЕ ЗА ПАБЛО ЭСКОБАР!`;
+                            pabloBanner.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.3);font-size:1.4rem;font-weight:900;color:#ffd966;text-shadow:0 0 30px #ffd966, 0 0 60px #ff6b6b, 0 4px 12px black;pointer-events:none;z-index:13000;white-space:nowrap;animation:pabloPop 3s ease-out forwards;background:linear-gradient(135deg, rgba(60,0,0,0.95), rgba(80,40,0,0.95));padding:20px 28px;border-radius:24px;border:4px solid #ffd966;text-align:center;max-width:90%;`;
+                            document.body.appendChild(pabloBanner);
+                            setTimeout(() => pabloBanner.remove(), 3000);
+                            playPabloSound();
+                            for (let i = 0; i < 30; i++) {
+                                setTimeout(() => {
+                                    const el = document.createElement('div');
+                                    el.textContent = ['👑','💰','💊','🔫','🚬','💎','😎'][Math.floor(Math.random()*7)];
+                                    el.style.cssText = `position:fixed;left:${window.innerWidth/2 + (Math.random()-0.5)*300}px;top:${window.innerHeight/2 + (Math.random()-0.5)*300}px;font-size:${Math.random()*30+20}px;pointer-events:none;z-index:12999;animation:floatUp 2.5s ease-out forwards;`;
+                                    document.body.appendChild(el);
+                                    setTimeout(() => el.remove(), 2500);
+                                }, i * 60);
+                            }
+                        }, 800);
+                        closeTaxModal();
+                        updateUI(); checkAchievements(); saveGame();
+                    }, 2000);
+                } else {
+                    startLieDetector();
+                }
+            }
+
+            function startLieDetector() {
+                const a = Math.floor(Math.random() * 10) + 1;
+                const b = Math.floor(Math.random() * 10) + 1;
+                const isPlus = Math.random() > 0.4;
+                const correct = isPlus ? a + b : a - b;
+                document.getElementById('detectorMath').textContent = `${a} ${isPlus ? '+' : '-'} ${b} = ?`;
+                const answers = [correct];
+                while (answers.length < 4) {
+                    const wrong = correct + (Math.floor(Math.random() * 7) - 3);
+                    if (wrong !== correct && !answers.includes(wrong) && wrong >= 0) answers.push(wrong);
+                }
+                answers.sort(() => Math.random() - 0.5);
+                const answersEl = document.getElementById('detectorAnswers');
+                answersEl.innerHTML = '';
+                answers.forEach(ans => {
+                    const btn = document.createElement('div');
+                    btn.className = 'detector-answer';
+                    btn.textContent = ans;
+                    btn.dataset.value = ans;
+                    btn.addEventListener('click', () => handleDetectorAnswer(ans, correct, btn));
+                    answersEl.appendChild(btn);
+                });
+                let timeLeft = 10;
+                const timerEl = document.getElementById('detectorTimer');
+                if (window._detectorTimer) clearInterval(window._detectorTimer);
+                window._detectorTimer = setInterval(() => {
+                    timeLeft--;
+                    timerEl.textContent = `⏳ ${timeLeft}с`;
+                    if (timeLeft <= 0) { clearInterval(window._detectorTimer); handleDetectorTimeout(); }
+                    if (!document.getElementById('taxOverlay').classList.contains('show')) clearInterval(window._detectorTimer);
+                }, 1000);
+            }
+
+            function handleDetectorAnswer(answer, correct, btn) {
+                if (window._detectorTimer) clearInterval(window._detectorTimer);
+                const allBtns = document.querySelectorAll('.detector-answer');
+                allBtns.forEach(b => b.style.pointerEvents = 'none');
+                if (answer === correct) {
+                    btn.classList.add('correct');
+                    lieDetectorSuccess++;
+                    taxEvasionLevel = Math.max(0, taxEvasionLevel - 1);
+                    playToneSequence([523, 659, 784, 1047], 'sine', 0.12, 0.06);
+                    setTimeout(() => {
+                        closeTaxModal();
+                        const banner = document.createElement('div');
+                        banner.textContent = `✅ ПРОВЕРКА ПРОЙДЕНА!`;
+                        banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:1.6rem;font-weight:900;color:#7ce07c;text-shadow:0 0 30px #7ce07c, 0 4px 12px black;pointer-events:none;z-index:12000;white-space:nowrap;animation:adBannerPop 2s ease-out forwards;background:rgba(0,30,10,0.9);padding:14px 20px;border-radius:20px;border:3px solid #7ce07c;`;
+                        document.body.appendChild(banner);
+                        setTimeout(() => banner.remove(), 2000);
+                        updateUI(); checkAchievements(); saveGame();
+                    }, 800);
+                } else {
+                    btn.classList.add('wrong');
+                    allBtns.forEach(b => { if (parseInt(b.dataset.value) === correct) b.classList.add('correct'); });
+                    lieDetectorFail++;
+                    taxEvasionLevel = Math.min(3, taxEvasionLevel + 1);
+                    playToneSequence([165, 130, 98], 'sawtooth', 0.15, 0.15);
+                    setTimeout(() => {
+                        const fine = Math.floor(score * 0.03);
+                        score = Math.max(0, score - fine);
+                        closeTaxModal();
+                        const banner = document.createElement('div');
+                        banner.textContent = `❌ ПРОВАЛ! ШТРАФ ${formatMoney(fine)} ₽`;
+                        banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:1.8rem;font-weight:900;color:#ff5252;text-shadow:0 0 30px #ff5252, 0 4px 12px black;pointer-events:none;z-index:12000;white-space:nowrap;animation:adBannerPop 2s ease-out forwards;background:rgba(40,0,0,0.9);padding:14px 20px;border-radius:20px;border:3px solid #c62828;`;
+                        document.body.appendChild(banner);
+                        setTimeout(() => banner.remove(), 2000);
+                        // ПАБЛО ЭСКОБАР ПРИ ПРОВАЛЕ ДЕТЕКТОРА
+                        setTimeout(() => {
+                            const pabloBanner = document.createElement('div');
+                            pabloBanner.innerHTML = `👑 Я СТХА, ВУ ЧЕ ЗА ПАБЛО ЭСКОБАР!`;
+                            pabloBanner.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.3);font-size:1.4rem;font-weight:900;color:#ffd966;text-shadow:0 0 30px #ffd966, 0 0 60px #ff6b6b, 0 4px 12px black;pointer-events:none;z-index:13000;white-space:nowrap;animation:pabloPop 3s ease-out forwards;background:linear-gradient(135deg, rgba(60,0,0,0.95), rgba(80,40,0,0.95));padding:20px 28px;border-radius:24px;border:4px solid #ffd966;text-align:center;max-width:90%;`;
+                            document.body.appendChild(pabloBanner);
+                            setTimeout(() => pabloBanner.remove(), 3000);
+                            playPabloSound();
+                            for (let i = 0; i < 30; i++) {
+                                setTimeout(() => {
+                                    const el = document.createElement('div');
+                                    el.textContent = ['👑','💰','💊','🔫','🚬','💎','😎'][Math.floor(Math.random()*7)];
+                                    el.style.cssText = `position:fixed;left:${window.innerWidth/2 + (Math.random()-0.5)*300}px;top:${window.innerHeight/2 + (Math.random()-0.5)*300}px;font-size:${Math.random()*30+20}px;pointer-events:none;z-index:12999;animation:floatUp 2.5s ease-out forwards;`;
+                                    document.body.appendChild(el);
+                                    setTimeout(() => el.remove(), 2500);
+                                }, i * 60);
+                            }
+                        }, 800);
+                        updateUI(); checkAchievements(); saveGame();
+                    }, 1200);
+                }
+            }
+
+            function handleDetectorTimeout() {
+                const allBtns = document.querySelectorAll('.detector-answer');
+                if (allBtns.length > 0) handleDetectorAnswer(-999, -1, allBtns[0]);
+            }
+
+            function closeTaxModal() {
+                document.getElementById('taxOverlay').classList.remove('show');
+                if (window._detectorTimer) clearInterval(window._detectorTimer);
+            }
+
+            function updateAiButton() {
+                const btn = document.getElementById('aiBtn');
+                if (!btn) return;
+                const now = Date.now();
+                const elapsed = now - lastAiAskTime;
+                const remaining = Math.max(0, AI_COOLDOWN - elapsed);
+                if (remaining > 0) {
+                    const sec = (remaining / 1000).toFixed(1);
+                    btn.classList.add('cooldown');
+                    btn.textContent = `⏳${sec}`;
+                } else {
+                    btn.classList.remove('cooldown');
+                    btn.textContent = '🤖 ИИ';
+                }
+            }
+
+            function updateSideJobButton() {
+                const btn = document.getElementById('sideJobBtn');
+                const progressEl = document.getElementById('adProgress');
+                if (!btn) return;
+                const now = Date.now();
+                const elapsed = now - lastSideJobTime;
+                const remaining = Math.max(0, SIDE_JOB_COOLDOWN - elapsed);
+                if (remaining > 0) {
+                    const sec = Math.ceil(remaining / 1000);
+                    btn.classList.add('cooldown');
+                    btn.textContent = `⏳${sec}`;
+                    if (progressEl) progressEl.textContent = sec;
+                } else {
+                    btn.classList.remove('cooldown');
+                    btn.textContent = '🤫 ТСС';
+                    if (progressEl) progressEl.textContent = 'ГОТОВО';
+                }
+            }
+
+            function trySideJob() {
+                const now = Date.now();
+                if (now - lastSideJobTime < SIDE_JOB_COOLDOWN) return false;
+                lastSideJobTime = now;
+                const reward = SIDE_JOB_REWARD * (1 + Math.floor(debtPaid / 1000000));
+                score += reward; totalEarned += reward; totalSideJobs++;
+                playSideJobSound(); coinRain(30);
+                const banner = document.createElement('div');
+                banner.textContent = `🤫 +${formatMoney(reward)} ₽`;
+                banner.style.cssText = `position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;color:#fff;text-shadow:0 2px 0 #000, 0 6px 20px black, 0 0 30px #fff;pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 1.5s ease-out forwards;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 1500);
+                updateUI(); checkAchievements(); checkTaxMilestone(); saveGame();
+                return true;
+            }
+
+            function payDebt() {
+                const remaining = getDebtRemaining();
+                if (remaining <= 0) { showDebtModal(true); return; }
+                if (score < remaining) { showDebtModal(false); return; }
+                score -= remaining; debtPaid = debtTotal;
+                playDebtPaidSound(); coinRain(100);
+                const banner = document.createElement('div');
+                banner.textContent = `🕊️ КРЕДИТ ВЫПЛАЧЕН!`;
+                banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;color:#7ce07c;text-shadow:0 0 30px #7ce07c, 0 0 60px #00c853, 0 4px 12px black;pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 2.5s ease-out forwards;background:rgba(0,30,10,0.9);padding:16px 24px;border-radius:20px;border:3px solid #7ce07c;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 2500);
+                updateUI(); checkAchievements(); saveGame();
+            }
+
+            function showDebtModal(alreadyPaid) {
+                const remaining = getDebtRemaining();
+                const canPay = score >= remaining;
+                const percent = getDebtPercent();
+                const html = `
+                    <button class="modal-close" onclick="window.__closeModal()">✕</button>
+                    <div class="modal-title">💸 Кредит «Горный Капитал»</div>
+                    <div class="modal-text">
+                        <b>Выдано:</b> 1 000 000 ₽<br>
+                        <b>К возврату:</b> 2 000 000 ₽<br>
+                        <b>Уже выплачено:</b> <span class="green">${formatMoney(debtPaid)} ₽</span><br>
+                        <b>Осталось:</b> <span class="pink">${formatMoney(remaining)} ₽</span>
+                        <br><br>
+                        <div style="background:rgba(0,0,0,0.4);border-radius:12px;padding:8px;">
+                            <div style="background:linear-gradient(90deg,#c62828,#7f0000);height:12px;border-radius:6px;overflow:hidden;">
+                                <div style="background:linear-gradient(90deg,#43a047,#7ce07c);height:100%;width:${percent}%;transition:width 0.5s;"></div>
+                            </div>
+                            <div style="text-align:center;font-size:0.8rem;color:#bfe7ff;margin-top:6px;">${percent.toFixed(1)}%</div>
+                        </div>
+                        ${alreadyPaid ? '<div class="green" style="font-size:1.1rem;">🕊️ Вы свободны от долга!</div>' : (canPay ? '<div class="green">Можно выплатить сейчас!</div>' : '<div class="pink">Не хватает ' + formatMoney(remaining - score) + ' ₽</div>')}
+                    </div>
+                    ${!alreadyPaid && canPay ? '<button class="modal-btn debt-confirm" id="confirmDebt">💸 ВЫПЛАТИТЬ ВЕСЬ КРЕДИТ</button>' : ''}
+                `;
+                openModal(html);
+                if (!alreadyPaid && canPay) {
+                    document.getElementById('confirmDebt').addEventListener('click', () => { closeModal(); payDebt(); });
+                }
+            }
+
+            function openCheatModal() {
+                document.getElementById('cheatInput').value = '';
+                document.getElementById('cheatOverlay').classList.add('show');
+                setTimeout(() => document.getElementById('cheatInput').focus(), 100);
+            }
+
+            function closeCheatModal() {
+                document.getElementById('cheatOverlay').classList.remove('show');
+            }
+
+            function applyCheatCode() {
+                const input = document.getElementById('cheatInput');
+                const code = input.value.trim().toLowerCase();
+                if (!code) {
+                    input.style.borderColor = '#ff5252';
+                    input.placeholder = '⚠️ ВВЕДИ КОД!';
+                    setTimeout(() => { input.style.borderColor = '#7a5216'; input.placeholder = 'введи код...'; }, 1500);
+                    return;
+                }
+                const cheat = CHEAT_CODES[code];
+                if (cheat) {
+                    score += cheat.reward;
+                    totalEarned += cheat.reward;
+                    if (!usedCheatCodes.includes(code)) usedCheatCodes.push(code);
+                    playCheatSound();
+                    coinRain(80);
+                    closeCheatModal();
+                    const banner = document.createElement('div');
+                    banner.textContent = cheat.message;
+                    banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:1.8rem;font-weight:900;color:#ffd966;text-shadow:0 0 30px #ffd966, 0 4px 12px black;pointer-events:none;z-index:13000;white-space:nowrap;animation:adBannerPop 2.5s ease-out forwards;background:rgba(60,40,0,0.95);padding:16px 24px;border-radius:20px;border:3px solid #ffd966;`;
+                    document.body.appendChild(banner);
+                    setTimeout(() => banner.remove(), 2500);
+                    updateUI(); checkAchievements(); checkTaxMilestone(); saveGame();
+                } else {
+                    input.style.borderColor = '#ff5252';
+                    input.value = '';
+                    input.placeholder = '❌ НЕВЕРНЫЙ КОД';
+                    playToneSequence([262, 196, 165], 'square', 0.15, 0.1);
+                    setTimeout(() => { input.style.borderColor = '#7a5216'; input.placeholder = 'введи код...'; }, 1500);
+                }
+            }
+
+            function formatMoney(n) {
+                if (n >= 1e12) return (n / 1e12).toFixed(2) + 'трлн';
+                if (n >= 1e9) return (n / 1e9).toFixed(2) + 'млрд';
+                if (n >= 1e6) return (n / 1e6).toFixed(2) + 'млн';
+                if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+                return Math.floor(n);
+            }
+
+            function applySave(data) {
+                if (!data) return;
+                score = data.score || 0; totalClicks = data.totalClicks || 0; totalEarned = data.totalEarned || 0;
+                views = data.views || 0; totalViews = data.totalViews || 0;
+                totalLives = data.totalLives || 0; totalPurchases = data.totalPurchases || 0;
+                totalStocksBought = data.totalStocksBought || 0; totalStocksSold = data.totalStocksSold || 0;
+                totalSideJobs = data.totalSideJobs || 0; totalAiAsks = data.totalAiAsks || 0;
+                debtPaid = data.debtPaid || 0; loanAccepted = data.loanAccepted || false;
+                vaharShown = data.vaharShown || false;
+                taxEvasionLevel = data.taxEvasionLevel || 0;
+                lieDetectorSuccess = data.lieDetectorSuccess || 0;
+                lieDetectorFail = data.lieDetectorFail || 0;
+                totalNewsSeen = data.totalNewsSeen || 0;
+                nextTaxThreshold = data.nextTaxThreshold || 5000000;
+                usedCheatCodes = data.usedCheatCodes || [];
+                liveActive = data.liveActive || false; liveEndTime = data.liveEndTime || 0;
+                lastSideJobTime = data.lastSideJobTime || 0;
+                lastAiAskTime = data.lastAiAskTime || 0;
+                if (data.upgrades) upgradesData.forEach(up => { upgrades[up.id] = data.upgrades[up.id] || 0; });
+                if (data.businesses) businessesData.forEach(b => { businesses[b.id] = data.businesses[b.id] || 0; });
+                if (data.managers) managersData.forEach(m => { if (data.managers[m.id]) managers[m.id] = true; });
+                if (data.stocks) stocksData.forEach(s => { if (data.stocks[s.id]) { stocks[s.id].owned = data.stocks[s.id].owned || 0; stocks[s.id].price = data.stocks[s.id].price || s.basePrice; stocks[s.id].prevPrice = data.stocks[s.id].prevPrice || s.basePrice; } });
+                if (data.businessEarnings) businessEarnings = data.businessEarnings;
+                if (data.businessKassa) businessKassa = data.businessKassa;
+                if (data.stockProfit) stockProfit = data.stockProfit;
+                if (data.stockSpent) stockSpent = data.stockSpent;
+                if (data.totalBusinessEarned) totalBusinessEarned = data.totalBusinessEarned;
+                if (data.totalStockProfit) totalStockProfit = data.totalStockProfit;
+                if (data.achievements) data.achievements.forEach(id => { const a = achievements.find(x => x.id === id); if (a) a.unlocked = true; });
+                if (liveActive && Date.now() > liveEndTime) liveActive = false;
+            }
+
+            function loadGame() {
+                try { const saved = localStorage.getItem('lezgiInvestorSave_v12'); if (saved) applySave(JSON.parse(saved)); } catch (e) {}
+                upgradesData.forEach(up => { if (upgrades[up.id] === undefined) upgrades[up.id] = 0; });
+                businessesData.forEach(b => {
+                    if (businesses[b.id] === undefined) businesses[b.id] = 0;
+                    if (businessKassa[b.id] === undefined) businessKassa[b.id] = 0;
+                    if (businessEarnings[b.id] === undefined) businessEarnings[b.id] = 0;
+                });
+                managersData.forEach(m => { if (managers[m.id] === undefined) managers[m.id] = false; });
+                stocksData.forEach(s => {
+                    if (stockProfit[s.id] === undefined) stockProfit[s.id] = 0;
+                    if (stockSpent[s.id] === undefined) stockSpent[s.id] = 0;
+                });
+                updateUI(); renderStocks();
+            }
+
+            function saveGame() {
+                const stocksSave = {};
+                stocksData.forEach(s => {
+                    stocksSave[s.id] = { owned: stocks[s.id].owned, price: stocks[s.id].price, prevPrice: stocks[s.id].prevPrice };
+                });
+                const data = {
+                    score, totalClicks, totalEarned, views, totalViews, totalLives,
+                    totalPurchases, totalStocksBought, totalStocksSold, totalSideJobs, totalAiAsks,
+                    debtPaid, loanAccepted, vaharShown, liveActive, liveEndTime, lastSideJobTime, lastAiAskTime,
+                    taxEvasionLevel, lieDetectorSuccess, lieDetectorFail, totalNewsSeen, nextTaxThreshold, usedCheatCodes,
+                    upgrades, businesses, businessKassa, managers, stocks: stocksSave,
+                    businessEarnings, stockProfit, stockSpent, totalBusinessEarned, totalStockProfit,
+                    achievements: achievements.filter(a => a.unlocked).map(a => a.id)
+                };
+                try { localStorage.setItem('lezgiInvestorSave_v12', JSON.stringify(data)); } catch (e) {}
+            }
+
+            function getUpgradeCost(up) { const owned = upgrades[up.id] || 0; return Math.floor(up.baseCost * Math.pow(up.costMult, owned)); }
+            function getBusinessCost(b) { const owned = businesses[b.id] || 0; return Math.floor(b.baseCost * Math.pow(b.costMult, owned)); }
+
+            let lastUIUpdate = 0;
+            function updateUI() {
+                const now = Date.now();
+                const shouldFullUpdate = now - lastUIUpdate > 200;
+                if (shouldFullUpdate) lastUIUpdate = now;
+
+                document.getElementById('score').textContent = formatMoney(score);
+                document.getElementById('viewsCount').textContent = Math.floor(views);
+                document.getElementById('viewsPerSec').textContent = getViewsPerSecond();
+                document.getElementById('statClicks').textContent = totalClicks;
+                document.getElementById('statPerSec').textContent = formatMoney(getIncomePerSecond());
+                document.getElementById('statPrestige').textContent = formatMoney(debtPaid) + ' ₽';
+                document.getElementById('statManager').textContent = lieDetectorSuccess + '/' + lieDetectorFail;
+
+                const debtValueEl = document.getElementById('debtValue');
+                const debtProgressEl = document.getElementById('debtProgress');
+                const remaining = getDebtRemaining();
+                const percent = getDebtPercent();
+                if (debtPaid >= debtTotal) {
+                    debtValueEl.textContent = '✅ ВЫПЛАЧЕН';
+                    debtValueEl.classList.add('paid');
+                    debtProgressEl.textContent = '100%';
+                } else {
+                    debtValueEl.textContent = formatMoney(remaining) + ' ₽';
+                    debtValueEl.classList.remove('paid');
+                    debtProgressEl.textContent = percent.toFixed(1) + '%';
+                }
+
+                const liveInd = document.getElementById('liveIndicator');
+                const statLiveItem = document.getElementById('statLiveItem');
+                if (liveActive) { liveInd.classList.add('show'); statLiveItem.style.display = 'flex'; }
+                else { liveInd.classList.remove('show'); statLiveItem.style.display = 'none'; }
+                const hint = document.getElementById('incomeHint');
+                const ips = getIncomePerSecond();
+                const debtPenalty = getDebtPenalty();
+                let hintText = '';
+                if (ips > 0) hintText = '+' + formatMoney(ips) + ' ₽/сек';
+                if (debtPenalty < 1) hintText += (hintText ? ' • ' : '') + 'долг -' + Math.round((1-debtPenalty)*100) + '%';
+                hint.textContent = hintText;
+                const unlockedCount = achievements.filter(a => a.unlocked).length;
+                document.getElementById('achCount').textContent = unlockedCount + '/' + achievements.length;
+                document.getElementById('terminalStatus').textContent = marketMultiplier >= 1 ? '● БЫК' : '● МЕДВЕДЬ';
+                document.getElementById('terminalStatus').style.color = marketMultiplier >= 1 ? '#7ce07c' : '#ff6b6b';
+
+                updateSideJobButton();
+                updateAiButton();
+
+                if (!shouldFullUpdate) return;
+
+                const container = document.getElementById('upgradesContainer');
+                container.innerHTML = '';
+                upgradesData.forEach(up => {
+                    const owned = upgrades[up.id] || 0;
+                    const cost = getUpgradeCost(up);
+                    const canAfford = score >= cost;
+                    const isLiveActive = up.live && liveActive;
+                    const isLiveCooldown = up.live && !liveActive && Date.now() < liveCooldownEnd;
+                    let cardClass = 'upgrade-card';
+                    if (up.type) cardClass += ' ' + up.type;
+                    if (!canAfford || isLiveCooldown || isLiveActive) cardClass += ' disabled';
+                    else cardClass += ' can-buy';
+                    const card = document.createElement('div');
+                    card.className = cardClass;
+                    card.dataset.id = up.id;
+                    let costText = '';
+                    if (up.live) {
+                        if (isLiveActive) costText = '🐂 БЫК';
+                        else if (isLiveCooldown) { const left = Math.ceil((liveCooldownEnd - Date.now()) / 1000); costText = `⏳ ${left}с`; }
+                        else costText = `💰 ${formatMoney(cost)}`;
+                    } else costText = `💰 ${formatMoney(cost)}`;
+                    card.innerHTML = `
+                        <div class="upgrade-emoji">${up.emoji}</div>
+                        <div class="upgrade-name">${up.name}</div>
+                        <div class="upgrade-info">${up.desc}</div>
+                        <div class="upgrade-cost">${costText}</div>
+                        ${up.live ? '' : `<div class="upgrade-owned">в портфеле: ${owned}</div>`}
+                    `;
+                    if (!up.live || (!isLiveActive && !isLiveCooldown && canAfford)) {
+                        card.addEventListener('click', (e) => { e.stopPropagation(); buyUpgrade(up.id); });
+                    }
+                    container.appendChild(card);
+                });
+
+                const bizContainer = document.getElementById('businessesContainer');
+                bizContainer.innerHTML = '';
+                let totalKassa = 0;
+                businessesData.forEach(b => {
+                    const owned = businesses[b.id] || 0;
+                    const cost = getBusinessCost(b);
+                    const canAfford = score >= cost;
+                    const earned = businessEarnings[b.id] || 0;
+                    const kassa = businessKassa[b.id] || 0;
+                    totalKassa += kassa;
+                    const hasMoney = kassa >= 1 && owned > 0;
+                    const card = document.createElement('div');
+                    card.className = `business-card ${canAfford ? 'can-buy' : (owned === 0 ? 'disabled' : '')} ${hasMoney ? 'has-money' : ''}`;
+                    card.dataset.id = b.id;
+                    card.innerHTML = `
+                        <div class="business-emoji">${b.emoji}</div>
+                        <div class="business-name">${b.name}</div>
+                        <div class="business-income">${b.desc}</div>
+                        ${owned > 0 ? `<div class="business-owned">×${owned} • ${formatMoney(b.income * owned)}/сек</div>` : ''}
+                        ${owned === 0 ? `<div class="business-cost">💰 ${formatMoney(cost)}</div>` : ''}
+                        ${hasMoney ? `<div class="business-kassa">💰 ${formatMoney(kassa)} ₽</div>` : ''}
+                        ${hasMoney ? `<button class="business-collect-btn" data-collect="${b.id}">💵 Собрать</button>` : ''}
+                        <div class="business-meme">"${b.meme}"</div>
+                    `;
+                    if (owned === 0) {
+                        card.addEventListener('click', (e) => { e.stopPropagation(); if (canAfford) buyBusiness(b.id); });
+                    }
+                    bizContainer.appendChild(card);
+                });
+                bizContainer.querySelectorAll('.business-collect-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); collectBusiness(btn.dataset.collect); });
+                });
+                const collectAllBtn = document.getElementById('collectAllBtn');
+                collectAllBtn.disabled = totalKassa < 1;
+
+                const stocksContainer = document.getElementById('stocksContainer');
+                if (stocksContainer) {
+                    stocksContainer.querySelectorAll('.stock-row').forEach(row => {
+                        const stockId = row.dataset.stockId;
+                        if (!stockId) return;
+                        const stock = stocks[stockId];
+                        if (!stock) return;
+                        const buyBtn = row.querySelector('.stock-btn.buy');
+                        const sellBtn = row.querySelector('.stock-btn.sell');
+                        if (buyBtn) { if (score >= stock.price) buyBtn.classList.remove('disabled'); else buyBtn.classList.add('disabled'); }
+                        if (sellBtn) { if (stock.owned > 0) sellBtn.classList.remove('disabled'); else sellBtn.classList.add('disabled'); }
+                    });
+                }
+
+                const mgrContainer = document.getElementById('managerContainer');
+                mgrContainer.innerHTML = '';
+                managersData.forEach(m => {
+                    const owned = managers[m.id];
+                    const canAfford = views >= m.costViews && !owned;
+                    const card = document.createElement('div');
+                    card.className = `manager-card ${canAfford ? 'can-buy' : (owned ? '' : 'disabled')}`;
+                    card.dataset.id = m.id;
+                    card.innerHTML = `
+                        <div class="manager-emoji">${m.emoji}</div>
+                        <div class="manager-name">${m.name}</div>
+                        <div class="manager-desc">+${m.level} к сделке</div>
+                        ${owned ? '<div class="manager-owned">✓ Нанят</div>' : `<div class="manager-cost">📊 ${m.costViews}</div>`}
+                    `;
+                    if (!owned) card.addEventListener('click', (e) => { e.stopPropagation(); hireManager(m.id); });
+                    mgrContainer.appendChild(card);
+                });
+
+                const debtBtn = document.getElementById('prestigeBtn');
+                if (debtBtn) {
+                    if (debtPaid >= debtTotal) { debtBtn.textContent = '✅ Кредит выплачен'; debtBtn.disabled = true; }
+                    else { debtBtn.textContent = '💸 Выплатить кредит'; debtBtn.disabled = false; }
+                }
+            }
+
+            function buyUpgrade(id) {
+                const up = upgradesData.find(u => u.id === id);
+                if (!up) return;
+                const cost = getUpgradeCost(up);
+                if (score < cost) return;
+                if (up.live) {
+                    if (liveActive) return;
+                    if (Date.now() < liveCooldownEnd) return;
+                    score -= cost;
+                    liveActive = true; liveEndTime = Date.now() + LIVE_DURATION; totalLives++;
+                    playLiveSound();
+                    showAchievementToast({ icon: '🐂', name: 'Бычий рынок!', id: 'live' });
+                    updateUI(); checkAchievements(); saveGame(); return;
+                }
+                score -= cost;
+                upgrades[id] = (upgrades[id] || 0) + 1;
+                playBuySound();
+                updateUI(); checkAchievements(); saveGame();
+            }
+
+            function buyBusiness(id) {
+                const b = businessesData.find(x => x.id === id);
+                if (!b) return;
+                const cost = getBusinessCost(b);
+                if (score < cost) return;
+                score -= cost;
+                businesses[id] = (businesses[id] || 0) + 1;
+                playBuySound();
+                updateUI(); checkAchievements(); saveGame();
+            }
+
+            function collectBusiness(id) {
+                const b = businessesData.find(x => x.id === id);
+                if (!b) return;
+                const amount = businessKassa[id] || 0;
+                if (amount < 1) return;
+                score += amount; totalEarned += amount; businessKassa[id] = 0;
+                playCollectSound();
+                const banner = document.createElement('div');
+                banner.textContent = `+${formatMoney(amount)} ₽`;
+                banner.style.cssText = `position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;color:#ffd966;text-shadow:0 2px 0 #7a5216, 0 6px 20px black, 0 0 30px #ffd966;pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 1.2s ease-out forwards;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 1200);
+                updateUI(); checkTaxMilestone(); saveGame();
+            }
+
+            function collectAllBusinesses() {
+                let total = 0;
+                businessesData.forEach(b => { const a = businessKassa[b.id] || 0; if (a >= 1) { total += a; businessKassa[b.id] = 0; } });
+                if (total < 1) return;
+                score += total; totalEarned += total;
+                playCollectSound(); coinRain(40);
+                const banner = document.createElement('div');
+                banner.textContent = `+${formatMoney(total)} ₽ СОБРАНО!`;
+                banner.style.cssText = `position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:2.2rem;font-weight:900;color:#7ce07c;text-shadow:0 2px 0 #1b5e20, 0 6px 20px black, 0 0 30px #7ce07c;pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 1.5s ease-out forwards;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 1500);
+                updateUI(); checkTaxMilestone(); saveGame();
+            }
+
+            function hireManager(id) {
+                const m = managersData.find(x => x.id === id);
+                if (!m || managers[id]) return;
+                if (views < m.costViews) return;
+                views -= m.costViews; managers[id] = true;
+                playManagerSound();
+                updateUI(); saveGame();
+            }
+
+            function buyStock(id) {
+                const s = stocksData.find(x => x.id === id);
+                if (!s) return;
+                const stock = stocks[id];
+                if (score < stock.price) return;
+                score -= stock.price; stock.owned++; totalStocksBought++;
+                stockSpent[id] = (stockSpent[id] || 0) + stock.price;
+                playBuySound(); renderStocks(); updateUI(); checkAchievements(); saveGame();
+            }
+
+            function sellStock(id) {
+                const s = stocksData.find(x => x.id === id);
+                if (!s) return;
+                const stock = stocks[id];
+                if (stock.owned <= 0) return;
+                const sellPrice = stock.price;
+                const avgBuyPrice = stockSpent[id] > 0 && stock.owned > 0 ? stockSpent[id] / (stock.owned + 1) : s.basePrice;
+                const profit = sellPrice - avgBuyPrice;
+                stock.owned--; score += sellPrice; totalEarned += sellPrice; totalStocksSold++;
+                stockProfit[id] = (stockProfit[id] || 0) + profit; totalStockProfit += profit;
+                if (stockSpent[id] > 0) stockSpent[id] = Math.max(0, stockSpent[id] - avgBuyPrice);
+                playSellSound();
+                const profitText = profit >= 0 ? '+' : '';
+                const profitColor = profit >= 0 ? '#7ce07c' : '#ff6b6b';
+                const banner = document.createElement('div');
+                banner.textContent = `${profitText}${formatMoney(profit)} ₽ от ${s.name}`;
+                banner.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:1.6rem;font-weight:900;color:${profitColor};text-shadow:0 2px 0 #1b5e20, 0 6px 20px black, 0 0 30px ${profitColor};pointer-events:none;z-index:9500;white-space:nowrap;animation:adBannerPop 1.5s ease-out forwards;`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 1500);
+                renderStocks(); updateUI(); checkAchievements(); checkTaxMilestone(); saveGame();
+            }
+
+            function handleAssetClick(e) {
+                if (isGamePaused) return;
+                initAudio();
+                const clickValue = getClickValue();
+                score += clickValue; totalClicks++; totalEarned += clickValue;
+                document.getElementById('score').textContent = formatMoney(score);
+                const counterDisplay = document.getElementById('counterDisplay');
+                counterDisplay.classList.add('score-pulse');
+                setTimeout(() => counterDisplay.classList.remove('score-pulse'), 300);
+                playPopSound();
+                const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth / 2);
+                const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
+                createFloatingPlus(x, y, clickValue);
+                createSparks(x, y);
+                createShockwave();
+                const assetIcon = document.getElementById('assetIcon');
+                assetIcon.classList.add('cliked');
+                setTimeout(() => assetIcon.classList.remove('cliked'), 350);
+                checkAchievements();
+                checkTaxMilestone();
+                if (totalClicks % 10 === 0) saveGame();
+            }
+
+            function createFloatingPlus(x, y, value) {
+                const plus = document.createElement('div');
+                plus.className = 'float-plus';
+                const emojis = ['💵', '💰', '💎', '📈', '💫'];
+                plus.textContent = '+' + formatMoney(value) + ' ' + emojis[Math.floor(Math.random() * emojis.length)];
+                plus.style.left = (x + (Math.random() - 0.5) * 60) + 'px';
+                plus.style.top = (y + (Math.random() - 0.5) * 30 - 20) + 'px';
+                document.body.appendChild(plus);
+                setTimeout(() => plus.remove(), 1000);
+            }
+
+            function createSparks(x, y) {
+                const colors = ['#7ce07c', '#82d8ff', '#2979ff', '#b0e8ff', '#fff3b0'];
+                for (let i = 0; i < 8; i++) {
+                    const spark = document.createElement('div');
+                    spark.className = 'spark';
+                    spark.style.left = x + 'px'; spark.style.top = y + 'px';
+                    spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    spark.style.boxShadow = `0 0 8px ${spark.style.background}`;
+                    const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.5;
+                    const distance = 50 + Math.random() * 80;
+                    spark.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                    spark.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+                    document.body.appendChild(spark);
+                    setTimeout(() => spark.remove(), 700);
+                }
+            }
+
+            function createShockwave() {
+                const assetArea = document.getElementById('assetArea');
+                const wave = document.createElement('div');
+                wave.className = 'shockwave';
+                assetArea.style.position = 'relative';
+                assetArea.appendChild(wave);
+                setTimeout(() => wave.remove(), 600);
+            }
+
+            function coinRain(count) {
+                const emojis = ['💵', '💰', '💎', '🪙', '✨', '💸', '🏆', '🥇'];
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const coin = document.createElement('div');
+                        coin.className = 'coin-fall';
+                        coin.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                        coin.style.left = Math.random() * 100 + '%';
+                        coin.style.fontSize = (Math.random() * 25 + 20) + 'px';
+                        const duration = (Math.random() * 2 + 2.5) + 's';
+                        coin.style.animationDuration = duration;
+                        coin.style.animationDelay = (Math.random() * 0.5) + 's';
+                        document.body.appendChild(coin);
+                        setTimeout(() => coin.remove(), (duration + 1) * 1000);
+                    }, i * 25);
+                }
+            }
+
+            const donateOverlay = document.getElementById('donateOverlay');
+            document.getElementById('donateBtn').addEventListener('click', () => {
+                initAudio();
+                playToneSequence([523, 659, 784], 'sine', 0.08, 0.08);
+                donateOverlay.classList.add('show');
+            });
+            document.getElementById('donateOk').addEventListener('click', () => {
+                totalPurchases++; checkAchievements(); saveGame();
+                donateOverlay.classList.remove('show');
+            });
+            donateOverlay.addEventListener('click', (e) => { if (e.target === donateOverlay) donateOverlay.classList.remove('show'); });
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const targetId = btn.dataset.copy;
+                    const text = document.getElementById(targetId).textContent;
+                    const cleanText = text.replace(/\s/g, '');
+                    const doCopy = () => {
+                        btn.classList.add('copied');
+                        const original = btn.textContent;
+                        btn.textContent = '✓';
+                        setTimeout(() => { btn.classList.remove('copied'); btn.textContent = original; }, 1500);
+                    };
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(cleanText).then(doCopy).catch(() => {
+                            const ta = document.createElement('textarea'); ta.value = cleanText;
+                            document.body.appendChild(ta); ta.select();
+                            try { document.execCommand('copy'); doCopy(); } catch (err) {}
+                            ta.remove();
+                        });
+                    } else {
+                        const ta = document.createElement('textarea'); ta.value = cleanText;
+                        document.body.appendChild(ta); ta.select();
+                        try { document.execCommand('copy'); doCopy(); } catch (err) {}
+                        ta.remove();
+                    }
+                });
+            });
+
+            document.getElementById('sideJobBtn').addEventListener('click', () => { if (isGamePaused) return; initAudio(); trySideJob(); });
+            document.getElementById('aiBtn').addEventListener('click', () => { if (isGamePaused) return; initAudio(); askAI(); });
+            document.getElementById('cheatBtn').addEventListener('click', () => { initAudio(); openCheatModal(); });
+            document.getElementById('collectAllBtn').addEventListener('click', () => { initAudio(); collectAllBusinesses(); });
+            document.getElementById('prestigeBtn').addEventListener('click', () => { initAudio(); if (debtPaid >= debtTotal) return; showDebtModal(false); });
+
+            document.getElementById('cheatCancel').addEventListener('click', closeCheatModal);
+            document.getElementById('cheatApply').addEventListener('click', applyCheatCode);
+            document.getElementById('cheatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCheatCode(); });
+            document.getElementById('cheatOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('cheatOverlay')) closeCheatModal(); });
+
+            document.getElementById('vaharClose').addEventListener('click', () => {
+                document.getElementById('vaharToast').classList.remove('show');
+                vaharShown = true;
+                saveGame();
+                if (!loanAccepted) {
+                    setTimeout(() => {
+                        document.getElementById('loanOverlay').classList.add('show');
+                        playLoanSound();
+                    }, 500);
+                } else {
+                    setTimeout(() => showTutorialIfNeeded(), 400);
+                }
+            });
+
+            document.getElementById('loanOk').addEventListener('click', () => {
+                initAudio(); playCoinSound();
+                loanAccepted = true;
+                score += 1000000; totalEarned += 1000000;
+                document.getElementById('loanOverlay').classList.remove('show');
+                coinRain(80);
+                updateUI(); saveGame();
+                checkTaxMilestone();
+                setTimeout(() => showTutorialIfNeeded(), 500);
+            });
+
+            const tutorialOverlay = document.getElementById('tutorialOverlay');
+            document.getElementById('tutorialClose').addEventListener('click', () => {
+                tutorialOverlay.classList.remove('show');
+                try { localStorage.setItem('lezgiTutorialDone', '1'); } catch(e) {}
+            });
+
+            function showTutorialIfNeeded() {
+                try {
+                    const done = localStorage.getItem('lezgiTutorialDone');
+                    if (!done) setTimeout(() => { tutorialOverlay.classList.add('show'); }, 500);
+                } catch(e) {}
+            }
+
+            function checkAchievements() {
+                achievements.forEach(a => {
+                    if (!a.unlocked && a.check()) {
+                        a.unlocked = true;
+                        showAchievementToast(a);
+                        playAchievementSound();
+                        updateUI(); saveGame();
+                    }
+                });
+            }
+
+            function showAchievementToast(a) {
+                const toast = document.getElementById('achToast');
+                toast.innerHTML = `<span style="font-size:1.3rem">${a.icon}</span> ${a.name}!`;
+                toast.classList.remove('marlboro', 'live', 'pablo', 'billion');
+                if (a.id === 'reels') toast.classList.add('marlboro');
+                if (a.id === 'live') toast.classList.add('live');
+                if (a.id === 'pablo') toast.classList.add('pablo');
+                if (a.id === 'billion') toast.classList.add('billion');
+                toast.classList.add('show');
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => toast.classList.remove('show'), 5000);
+            }
+
+            const modalOverlay = document.getElementById('modalOverlay');
+            const modalContent = document.getElementById('modalContent');
+            function openModal(html) { modalContent.innerHTML = html; modalOverlay.classList.add('show'); }
+            function closeModal() { modalOverlay.classList.remove('show'); }
+            modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+            function showAchievementsModal() {
+                const unlockedCount = achievements.filter(a => a.unlocked).length;
+                let listHtml = '';
+                achievements.forEach(a => {
+                    const isReels = a.id === 'reels';
+                    const showName = (a.secret && !a.unlocked) ? '???' : a.name;
+                    const showDesc = (a.secret && !a.unlocked) ? 'Секретное достижение' : a.desc;
+                    const showIcon = a.unlocked ? a.icon : (a.secret ? '❓' : '🔒');
+                    listHtml += `
+                        <div class="ach-item ${a.unlocked ? 'unlocked' : 'locked'} ${isReels ? 'marlboro' : ''}">
+                            <div class="ach-icon">${showIcon}</div>
+                            <div class="ach-info">
+                                <div class="ach-name">${showName}</div>
+                                <div class="ach-desc">${showDesc}</div>
+                            </div>
+                            ${a.unlocked ? '<div class="ach-check">✓</div>' : ''}
+                        </div>
+                    `;
+                });
+                const html = `
+                    <button class="modal-close" onclick="window.__closeModal()">✕</button>
+                    <div class="modal-title">🏆 Достижения</div>
+                    <div class="modal-text">Открыто <b>${unlockedCount}</b> из <b>${achievements.length}</b></div>
+                    <div class="ach-list">${listHtml}</div>
+                `;
+                openModal(html);
+            }
+
+            function showStatsModal() {
+                let bizHtml = '';
+                businessesData.forEach(b => {
+                    const owned = businesses[b.id] || 0;
+                    if (owned === 0) return;
+                    const earned = businessEarnings[b.id] || 0;
+                    const kassa = businessKassa[b.id] || 0;
+                    bizHtml += `
+                        <div class="stat-row">
+                            <div class="stat-emoji">${b.emoji}</div>
+                            <div class="stat-info">
+                                <div class="stat-name">${b.name} <span class="stat-mult">×${owned}</span></div>
+                                <div class="stat-detail">${formatMoney(b.income * owned)} ₽/сек • касса: ${formatMoney(kassa)} ₽</div>
+                            </div>
+                            <div class="stat-earned">+${formatMoney(earned)} ₽</div>
+                        </div>
+                    `;
+                });
+                let stockHtml = '';
+                stocksData.forEach(s => {
+                    const stock = stocks[s.id];
+                    const profit = stockProfit[s.id] || 0;
+                    const spent = stockSpent[s.id] || 0;
+                    if (stock.owned === 0 && profit === 0 && spent === 0) return;
+                    const profitClass = profit >= 0 ? 'up' : 'down';
+                    const profitSign = profit >= 0 ? '+' : '';
+                    stockHtml += `
+                        <div class="stat-row">
+                            <div class="stat-emoji">${s.emoji}</div>
+                            <div class="stat-info">
+                                <div class="stat-name">${s.name} <span class="stat-mult">${stock.owned} шт</span></div>
+                                <div class="stat-detail">Цена: ${formatMoney(stock.price)} ₽</div>
+                            </div>
+                            <div class="stat-earned ${profitClass}">${profitSign}${formatMoney(profit)} ₽</div>
+                        </div>
+                    `;
+                });
+                const html = `
+                    <button class="modal-close" onclick="window.__closeModal()">✕</button>
+                    <div class="modal-title">📊 Статистика</div>
+                    <div class="modal-text">
+                        <b>Доход от бизнесов:</b> <span class="green">${formatMoney(totalBusinessEarned)} ₽</span><br>
+                        <b>Прибыль от акций:</b> <span class="${totalStockProfit >= 0 ? 'green' : 'pink'}">${totalStockProfit >= 0 ? '+' : ''}${formatMoney(totalStockProfit)} ₽</span><br>
+                        <b>Выплачено долга:</b> <span class="green">${formatMoney(debtPaid)} ₽</span><br>
+                        <b>Проверок налоговой:</b> <span class="green">${lieDetectorSuccess}✅ / ${lieDetectorFail}❌</span><br>
+                        <b>Следующий порог:</b> <span class="green">${formatMoney(nextTaxThreshold)} ₽</span><br>
+                        <b>Чит-кодов:</b> <span class="green">${usedCheatCodes.length}</span>
+                    </div>
+                    ${bizHtml ? '<div class="stat-section-title">🏪 Бизнесы</div><div class="stat-list">' + bizHtml + '</div>' : ''}
+                    ${stockHtml ? '<div class="stat-section-title">📈 Акции</div><div class="stat-list">' + stockHtml + '</div>' : ''}
+                `;
+                openModal(html);
+            }
+
+            window.__closeModal = closeModal;
+
+            function formatTime(ms) {
+                if (ms < 0) ms = 0;
+                const totalSec = Math.ceil(ms / 1000);
+                const min = Math.floor(totalSec / 60);
+                const sec = totalSec % 60;
+                return String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+            }
+
+            function gameLoop() {
+                if (isGamePaused) return;
+                const now = Date.now();
+                if (liveActive && now >= liveEndTime) {
+                    liveActive = false; liveCooldownEnd = now + LIVE_COOLDOWN;
+                    updateUI();
+                }
+                if (liveActive) {
+                    const left = liveEndTime - now;
+                    document.getElementById('liveTimer').textContent = formatTime(left);
+                }
+                if (aiRecommendStockId && now >= aiRecommendUntil) aiRecommendStockId = null;
+                const bizIncome = getBusinessesIncome() * getDebtPenalty() * marketMultiplier;
+                if (bizIncome > 0) {
+                    businessesData.forEach(b => {
+                        const owned = businesses[b.id] || 0;
+                        if (owned > 0) {
+                            const bGain = owned * b.income * getDebtPenalty() * marketMultiplier / 10;
+                            businessKassa[b.id] = (businessKassa[b.id] || 0) + bGain;
+                            businessEarnings[b.id] = (businessEarnings[b.id] || 0) + bGain;
+                            totalBusinessEarned += bGain;
+                        }
+                    });
+                }
+                const upgradeIncome = getUpgradesIncome() * getDebtPenalty() * marketMultiplier;
+                if (upgradeIncome > 0) { const gain = upgradeIncome / 10; score += gain; totalEarned += gain; }
+                const vps = getViewsPerSecond();
+                if (vps > 0) {
+                    const vGain = vps / 10; views += vGain; totalViews += vGain;
+                    document.getElementById('viewsCount').textContent = Math.floor(views);
+                }
+                if (Math.floor(now / 10000) !== Math.floor((now - 100) / 10000)) marketMultiplier = 0.7 + Math.random() * 0.6;
+                updateSideJobButton(); updateAiButton();
+                document.getElementById('score').textContent = formatMoney(score);
+                document.getElementById('statPerSec').textContent = formatMoney(getIncomePerSecond());
+                document.getElementById('viewsPerSec').textContent = getViewsPerSecond();
+            }
+
+            setInterval(() => { if (isGamePaused) return; updateStockPrices(); }, 5000);
+            setInterval(() => { if (!isGamePaused) { updateSideJobButton(); updateAiButton(); } }, 250);
+            setInterval(() => { if (!isGamePaused) updateUI(); }, 500);
+
+            function startGame() {
+                console.log('🎮 Лезги Инвестор старт');
+                loadGame();
+                updateUI();
+                renderStocks();
+
+                const assetIcon = document.getElementById('assetIcon');
+                assetIcon.addEventListener('click', handleAssetClick);
+                assetIcon.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    handleAssetClick({ clientX: touch.clientX, clientY: touch.clientY });
+                }, { passive: false });
+
+                document.getElementById('stocksContainer').addEventListener('click', (e) => {
+                    const btn = e.target.closest('.stock-btn');
+                    if (!btn || btn.classList.contains('disabled')) return;
+                    e.stopPropagation();
+                    const action = btn.dataset.action;
+                    const id = btn.dataset.id;
+                    if (action === 'buy') buyStock(id);
+                    else if (action === 'sell') sellStock(id);
+                });
+
+                document.getElementById('statsBtn').addEventListener('click', (e) => { e.preventDefault(); initAudio(); showStatsModal(); });
+                document.getElementById('achBtn').addEventListener('click', (e) => { e.preventDefault(); initAudio(); showAchievementsModal(); });
+
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+                document.addEventListener('selectstart', (e) => e.preventDefault());
+                document.addEventListener('dragstart', (e) => e.preventDefault());
+
+                document.body.addEventListener('click', () => initAudio(), { once: true });
+                document.body.addEventListener('touchstart', () => initAudio(), { once: true });
+
+                setInterval(saveGame, 5000);
+                setInterval(gameLoop, 100);
+                window.addEventListener('beforeunload', saveGame);
+
+                setInterval(() => { if (!isGamePaused && totalClicks > 5) showWorldNews(); }, 25000);
+                setInterval(() => { if (!isGamePaused && totalClicks > 20) checkTaxEvasion(); }, 40000);
+
+                checkAchievements();
+
+                if (!vaharShown) {
+                    setTimeout(() => {
+                        document.getElementById('vaharToast').classList.add('show');
+                        playVaharSound();
+                    }, 400);
+                } else if (!loanAccepted) {
+                    setTimeout(() => {
+                        document.getElementById('loanOverlay').classList.add('show');
+                        playLoanSound();
+                    }, 300);
+                } else {
+                    showTutorialIfNeeded();
+                }
+                console.log('✅ Готово');
+            }
+
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startGame);
+            else startGame();
+
+        })();
+    </script>
+</body>
+</html>
